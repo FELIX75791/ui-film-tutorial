@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% set page = "tutorial" %}
+{% block title %}{{ heading }} – {{ title }}{% endblock %}
+
+{% block content %}
+<!-- page heading -->
+<h1>{{ heading }}</h1>
+
+<!-- dynamic page body comes from its own fragment -->
+{% include content_fragment %}
+
+<div class="pager">
+  {% if prev_url %}<a class="nav-btn" href="{{ prev_url }}">← Back</a>{% endif %}
+  {% if next_url %}<a class="nav-btn" href="{{ next_url }}">Next →</a>{% endif %}
+</div>
+{% endblock %}
