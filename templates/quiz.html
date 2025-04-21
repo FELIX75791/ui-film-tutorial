@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Quiz{% endblock %}
+{% block head_extra %}
+  <script src="{{ url_for('static', path='js/quiz.js') }}" defer></script>
+{% endblock %}
+{% block content %}
+<h1>Quick Quiz</h1>
+<form id="quiz-form">
+  <!-- Q1 -->
+  <div class="question">
+    <p><strong>1.</strong> Which technique creates a sense of disorientation?</p>
+    <label><input type="radio" name="q1" value="Dutch"> Dutch Angle</label><br>
+    <label><input type="radio" name="q1" value="Match"> Match Cut</label><br>
+    <label><input type="radio" name="q1" value="RuleThirds"> Rule of Thirds</label>
+  </div>
+
+  <!-- Q2 -->
+  <div class="question">
+    <p><strong>2.</strong> Drag & drop: match each technique to the emotion.</p>
+    <p>(✱ implement with jQuery‑UI sortable / draggable if desired)</p>
+    <label><input type="checkbox" name="q2-dutch"> Tension</label><br>
+    <label><input type="checkbox" name="q2-long"> Grandeur</label><br>
+  </div>
+
+  <button type="submit">Submit</button>
+</form>
+
+<div id="score-box" class="hidden"></div>
+{% endblock %}

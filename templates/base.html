@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Cinematography Tutorial{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+  <script src=https://code.jquery.com/jquery-3.3.1.min.js crossorigin="anonymous"></script>
+  <script src="{{ url_for('static', path='js/main.js') }}" defer></script>
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<header class="topbar">
+  <nav class="nav">
+    {% macro nav_link(url, label, code) -%}
+      <a href="{{ url }}" class="{{ 'active' if page==code else '' }}">{{ label }}</a>
+    {%- endmacro %}
+
+    {{ nav_link(url_for('home'),      'Home',      'home') }}
+    {{ nav_link(url_for('overview'),  'Overview',  'overview') }}
+
+    <div class="dropdown">
+      <button class="dropbtn {{ 'active' if page=='tutorial' else '' }}">
+        Tutorial <span class="caret">▾</span>
+      </button>
+      <div class="dropdown-content">
+        <a href="/category/angle-movement">Angle &amp; Movement</a>
+        <a href="/category/shot-composition">Shots &amp; Compositions</a>
+        <a href="/category/editing-transition">Editing &amp; Transition</a>
+        <a href="/category/visual-storytelling">Visual Storytelling</a>
+      </div>
+    </div>
+
+    {{ nav_link(url_for('quiz'),      'Quiz',      'quiz') }}
+    {{ nav_link(url_for('contact'),   'Contact',   'contact') }}
+  </nav>
+</header>
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer class="footer">
+  <small>&copy; 2025 Essential Cinematography Tutorial</small>
+</footer>
+</body>
+</html>
