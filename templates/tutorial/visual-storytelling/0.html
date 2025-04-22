@@ -1,10 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Title</title>
-</head>
-<body>
+{# fragment included by tutorial_page.html #}
 
-</body>
-</html>
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/visual_story.css') }}">
+
+<p class="vs-lead">
+  Visual elements like color, lighting, and set design contribute
+  to storytelling and emotional impact.
+</p>
+
+<div class="vs-panel">
+  <div class="vs-grid">
+
+    <a class="vs-card" href="/category/visual-storytelling/1">
+      <img src="/static/img/color.jpg" alt="Color & Lighting">
+      <div class="vs-caption">
+        <span class="title">COLOR & LIGHTING</span>
+        <span class="btn">Explore</span>
+      </div>
+    </a>
+
+    <a class="vs-card" href="/category/visual-storytelling/2">
+      <img src="/static/img/symbolism.jpg" alt="Symbolism">
+      <div class="vs-caption">
+        <span class="title">SYMBOLISM</span>
+        <span class="btn">Explore</span>
+      </div>
+    </a>
+
+  </div>
+
+  <p class="vs-note">
+    Select a category to begin learning, or explore them in sequence
+  </p>
+</div>
