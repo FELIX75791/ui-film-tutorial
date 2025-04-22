@@ -1,8 +1,11 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import HTTPException
+from pydantic import BaseModel
+from typing import List, Dict
 import pathlib, uvicorn
 
 # ─── tutorial "TOC" ───────────────────────────────────────
@@ -56,8 +59,9 @@ def home(request: Request):
 def overview(request: Request):
     return templates.TemplateResponse("overview.html", {"request": request, "page": "overview"})
 
-@app.get("/quiz", response_class=HTMLResponse)
-def quiz(request: Request):
+# ─── Quiz Page ──────────────────────────
+@app.get("/quiz", response_class=HTMLResponse, name="quiz")
+def quiz_page(request: Request):
     return templates.TemplateResponse("quiz.html", {"request": request, "page": "quiz"})
 
 @app.get("/contact", response_class=HTMLResponse)
@@ -121,6 +125,63 @@ def tutorial_page(request: Request, slug: str, page_idx: int = 0):
             "content_fragment": content_fragment
         }
     )
+
+
+# ─── Quiz API ───────────────────────────
+QUIZ_ANSWERS = {
+    "q1": {
+        "correct_answers": ["Low-Key Lighting"],
+        "explanation": (
+            "Low-key lighting emphasizes deep shadows and high contrast between light "
+            "and dark areas. It creates a moody, dramatic, or mysterious atmosphere."
+        )
+    },
+    # q2 always correct
+    "q2": {
+        "correct_answers": [],
+        "explanation": "Great match!"
+    },
+    "q3": {
+        "correct_answers": ["POV shot"],
+        "explanation": "A POV shot puts the audience directly in the character’s shoes at that moment of realization."
+    },
+    "q4": {
+        "correct_answers": ["Dutch Angle"],
+        "explanation": "Dutch angles skew the frame to convey unease or disorientation in the scene."
+    },
+    "q5": {
+        "correct_answers": ["Fear"],
+        "explanation": "The lighting and framing heighten a sense of fear in the character."
+    }
+}
+
+class QuizSubmission(BaseModel):
+    answers: Dict[str, List[str]]
+
+@app.post("/api/quiz/submit")
+async def submit_quiz(submission: QuizSubmission):
+    score = 0
+    feedback = {}
+
+    for q_id, user_list in submission.answers.items():
+        key = QUIZ_ANSWERS.get(q_id)
+        if not key:
+            continue
+
+        expect = {c.strip().lower() for c in key["correct_answers"]}
+        got    = {u.strip().lower() for u in user_list}
+
+        correct = (not expect) or (got == expect)
+        if correct:
+            score += 1
+
+        feedback[q_id] = {
+            "correct": correct,
+            "explanation": key["explanation"]
+        }
+
+    return JSONResponse({"score": score, "feedback": feedback})
+
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)
