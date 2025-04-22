@@ -1,10 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Title</title>
-</head>
-<body>
+{# loaded through {% include %} inside tutorial_page.html #}
 
-</body>
-</html>
+<!-- page‑specific styles / script -->
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/editing_overview.css') }}">
+<script defer
+        src="{{ url_for('static', path='js/editing_overview.js') }}"></script>
+
+<p class="lead">
+  Editing connects shots to create meaning. How shots transition between
+  each other can create different emotional responses and narrative
+  connections.
+</p>
+
+<div class="et-grid">
+  <a class="et-card" href="/category/editing-transition/1">
+    <img src="/static/img/cut.jpg" alt="Explore Cuts">
+    <span class="et-label">Explore&nbsp;Cuts</span>
+  </a>
+
+  <a class="et-card" href="/category/editing-transition/2">
+    <img src="/static/img/transition.png" alt="Explore Transitions">
+    <span class="et-label">Explore&nbsp;Transitions</span>
+  </a>
+</div>

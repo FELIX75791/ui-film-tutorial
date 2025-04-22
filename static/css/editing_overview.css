@@ -1,0 +1,33 @@
+/* grid container */
+.et-grid{
+  display:grid;
+  gap:1.25rem;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  margin-top:2rem;
+}
+
+/* individual card */
+.et-card{
+  position:relative;
+  display:block;
+  border-radius:.35rem;
+  overflow:hidden;
+  text-decoration:none;
+  box-shadow:0 4px 10px rgba(0,0,0,.35);
+  transition:transform .25s ease;
+}
+.et-card:hover{ transform:translateY(-4px); }
+
+/* image */
+.et-card img{
+  width:100%; height:340px; object-fit:cover; display:block;
+}
+
+/* label bar */
+.et-label{
+  position:absolute; inset:auto 0 0 0;
+  background:rgba(0,0,0,.65);
+  color:#fff; text-align:center;
+  font-weight:600; letter-spacing:.3px;
+  padding:.65rem 0;
+}
