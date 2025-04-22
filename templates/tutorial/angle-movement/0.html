@@ -1,10 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# loaded through {% include %} inside tutorial_page.html #}
 
-</body>
-</html>
+<!-- page‑specific styles / script -->
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/editing_overview.css') }}">
+<script defer
+        src="{{ url_for('static', path='js/editing_overview.js') }}"></script>
+
+<p class="lead">
+    Camera angles and movement techniques determine how the audience perceives a scene. These techniques can create psychological effects, establish relationships between characters, and guide viewer attention.
+</p>
+
+<div class="et-grid">
+  <a class="et-card" href="/category/angle-movement/1">
+    <img src="/static/img/dutch.jpg" alt="Explore Dutch Angle">
+    <span class="et-label">Explore&nbsp;Dutch&nbsp;Angle</span>
+  </a>
+
+  <a class="et-card" href="/category/angle-movement/2">
+    <img src="/static/img/lowAngle.jpg" alt="Explore Camera Angle">
+    <span class="et-label">Explore&nbsp;Camera&nbsp;Angle</span>
+  </a>
+</div>

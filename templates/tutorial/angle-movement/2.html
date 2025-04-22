@@ -1,10 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# this fragment is pulled into tutorial_page.html #}
 
-</body>
-</html>
+<!-- page‑specific style sheet (square cards) -->
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/angle_movement_angles.css') }}">
+
+<script defer
+      src="{{ url_for('static', path='js/angle_movement_angles.js') }}"></script>
+
+<div class="container">
+
+<p>
+    Dutch angles (also called canted angles) tilt the camera to create psychological unease or tension.
+    Directors use them to show disorientation, psychological distress, or to create visual interest.
+</p>
+
+<div class="angle-container">
+    <div class="image-section">
+        <img id="angleImage" src="/static/img/lowAngle.jpg" alt="Low Level Camera Angle">
+    </div>
+
+    <div class="button-section">
+        <button class="angle-btn active" onclick="changeAngle('low')">Low Angle</button>
+        <button class="angle-btn" onclick="changeAngle('eye')">Eye-Level</button>
+        <button class="angle-btn" onclick="changeAngle('high')">High Angle</button>
+    </div>
+</div>
