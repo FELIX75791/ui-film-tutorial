@@ -10,9 +10,7 @@ CATEGORIES = [
     ("angle-movement", [
         "Overview",            # page 0
         "Dutch Angle",         # page 1
-        "Low / High Angle",    # page 2
-        "POV Shot",            # page 3
-        "Camera Movement"      # page 4
+        "Camera Angle"         # page 2
     ]),
     ("shot-composition", [
         "Overview",
