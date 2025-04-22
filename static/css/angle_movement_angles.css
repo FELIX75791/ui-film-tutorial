@@ -1,0 +1,43 @@
+  .angle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+  
+  .image-section img {
+    width: 300px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+  }
+  
+  .button-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .angle-btn {
+    padding: 15px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    background-color: #555;
+    color: white;
+    cursor: pointer;
+    width: 150px;
+    transition: background 0.3s;
+  }
+  
+  .angle-btn:hover {
+    background-color: #777;
+  }
+  
+  .angle-btn.active {
+    background-color: #e0e0e0;
+    color: black;
+    font-weight: bold;
+  }
+  
