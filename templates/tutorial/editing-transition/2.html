@@ -1,10 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# pulled into tutorial_page.html via {% include %} #}
 
-</body>
-</html>
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/editing_transitions.css') }}">
+<script defer
+        src="{{ url_for('static', path='js/editing_transitions.js') }}"></script>
+
+<p class="lead">
+  Transitions include:
+  <br><strong>Dissolve</strong>: One image fades in while another fades out
+  <br><strong>Fade In/Out</strong>: Image gradually appears from or disappears to black
+  <br><strong>Wipes</strong>: One image is progressively replaced by another
+  <br><strong>Iris</strong>: Screen closes down to or opens from a point
+</p>
+
+<div class="preview-wrapper">
+   <video id="transition-preview"
+          autoplay muted loop playsinline>
+     <source src="/static/video/dissolve.mp4"
+             type="video/mp4">
+     Your browser doesn’t support MP4.
+   </video>
+</div>
+
+<!-- main selector buttons -->
+<div class="tbar">
+  <button class="tbtn active" data-trans="dissolve">Dissolve</button>
+  <button class="tbtn"          data-trans="fade">Fade In/Out</button>
+  <button class="tbtn"          data-trans="wipes">Wipes</button>
+  <button class="tbtn"          data-trans="iris">Iris</button>
+</div>
+
+<!-- sub‑choices (only visible when .show) -->
+<div id="fade-subbar" class="subbar">
+  <button class="sbtn" data-sub="fade-in">Fade In</button>
+  <button class="sbtn" data-sub="fade-out">Fade Out</button>
+</div>
