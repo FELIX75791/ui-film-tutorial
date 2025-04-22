@@ -1,10 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# this fragment is pulled into tutorial_page.html #}
 
-</body>
-</html>
+<!-- page‑specific style sheet (square cards) -->
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/shot_composition_composition.css') }}">
+
+<script defer
+      src="{{ url_for('static', path='js/shot_composition_composition.js') }}"></script>
+
+
+<div class="main-layout">
+    <div class="display-area">
+        <img id="techImage" src="/static/img/leading_lines.jpg" alt="Composition Technique">
+        <p id="techDescription">Leading lines draw the viewer’s eye through the image, often toward the subject.</p>
+    </div>
+
+    <div class="button-column">
+        <button class="tech-btn active" onclick="changeTechnique('leading-lines')">Leading Lines</button>
+        <button class="tech-btn" onclick="changeTechnique('symmetry')">Symmetry</button>
+        <button class="tech-btn" onclick="changeTechnique('rule-of-thirds')">Rule of Thirds</button>
+    </div>
+</div>

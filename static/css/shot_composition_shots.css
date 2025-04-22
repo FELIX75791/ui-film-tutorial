@@ -1,0 +1,55 @@
+  .main-layout {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+  
+  .display-area {
+    max-width: 500px;
+  }
+  
+  .display-area img {
+    height: 270px;
+    width: 500px;
+    max-width: 90%;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  }
+  
+  .display-area p {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #3c3c3c;
+    text-align: left;
+  }
+  
+  .button-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 150px);
+    gap: 15px;
+  }
+  
+  .shot-btn {
+    padding: 12px;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    height: 60px;
+  }
+  
+  .shot-btn:hover {
+    background-color: #666;
+  }
+  
+  .shot-btn.active {
+    background-color: #e0e0e0;
+    color: black;
+    font-weight: bold;
+  }
+  

@@ -1,10 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# this fragment is pulled into tutorial_page.html #}
 
-</body>
-</html>
+<!-- page‑specific style sheet (square cards) -->
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/shot_composition_shots.css') }}">
+
+<script defer
+      src="{{ url_for('static', path='js/shot_composition_shots.js') }}"></script>
+
+
+<div class="main-layout">
+    <div class="display-area">
+        <img id="shotImage" src="/static/img/extreme_wide.jpg" alt="Shot Type">
+        <p id="shotDescription">The extreme wide shot shows a vast environment and is used to establish the setting or emphasize scale.</p>
+    </div>
+    
+    <div class="button-grid">
+        <button class="shot-btn active" onclick="changeShot('extreme-wide')">Extreme Wide</button>
+        <button class="shot-btn" onclick="changeShot('wide')">Wide</button>
+        <button class="shot-btn" onclick="changeShot('full')">Full</button>
+        <button class="shot-btn" onclick="changeShot('medium')">Medium</button>
+        <button class="shot-btn" onclick="changeShot('medium-close-up')">Medium Close-Up</button>
+        <button class="shot-btn" onclick="changeShot('close-up')">Close-Up</button>
+        <button class="shot-btn" onclick="changeShot('extreme-close-up')">Extreme Close-Up</button>
+        <button class="shot-btn" onclick="changeShot('establishing')">Establishing</button>
+    </div>
+</div>
