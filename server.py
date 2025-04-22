@@ -20,12 +20,12 @@ CATEGORIES = [
         "Composition Techniques"
     ]),
     ("editing-transition", [
-        "Overview",
+        "Editing and Transition Overview",
         "Cuts",
         "Transitions"
     ]),
     ("visual-storytelling", [
-        "Overview",
+        "Visual and Storytelling Overview",
         "Color & Lighting",
         "Symbolism"
     ])

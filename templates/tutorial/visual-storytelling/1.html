@@ -1,10 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# included by tutorial_page.html #}
 
-</body>
-</html>
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/visual_color.css') }}">
+<script defer
+        src="{{ url_for('static', path='js/visual_color.js') }}"></script>
+
+<ul class="cl-bullets">
+  <li><strong>High‑key lighting:</strong> Bright, few shadows, positive mood</li>
+  <li><strong>Low‑key lighting:</strong> Dark, strong shadows, dramatic mood</li>
+  <li><strong>Color schemes:</strong> Complementary, analogous, monochromatic</li>
+  <li><strong>Color symbolism:</strong> Red for passion/danger, blue for calm/sadness</li>
+</ul>
+
+<!-- twin preview frames -->
+<div class="cl-preview">
+  <img id="light-preview"
+       src="/static/img/high-key.jpg"
+       alt="Lighting example">
+  <img id="color-preview"
+       src="/static/img/complementary.jpg"
+       alt="Color example">
+</div>
+
+<div class="cl-buttons">
+
+  <div class="cl-group">
+    <button class="grp a active" data-light="high-key">High‑key</button>
+    <button class="grp a"        data-light="low-key">Low‑key</button>
+  </div>
+
+  <div class="cl-group">
+    <button class="grp b active" data-color="complementary">Complementary</button>
+    <button class="grp b"        data-color="monochromatic">Monochromatic</button>
+  </div>
+
+</div>
+

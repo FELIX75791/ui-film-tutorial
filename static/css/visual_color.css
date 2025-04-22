@@ -1,0 +1,65 @@
+/* nicer bullet spacing */
+.cl-bullets{ margin:0 0 1.8rem 1.2rem; line-height:1.5; }
+.cl-bullets li{ margin:.4rem 0; }
+
+/* previews side by side */
+.cl-preview{
+  display:flex; gap:1.25rem; justify-content:center;
+  margin-bottom:1.1rem;
+}
+.cl-preview img{
+  width:360px; height:360px; object-fit:cover; border-radius:.35rem;
+  box-shadow:0 4px 14px rgba(0,0,0,.35);
+}
+
+/* button bar */
+.cl-buttons{
+  display:flex; flex-wrap:wrap; gap:.75rem; justify-content:center;
+}
+.cl-buttons button{
+  padding:.55rem 1.2rem;
+  background:#e7e7e7; border:2px solid #555; border-radius:.35rem;
+  font-weight:600; cursor:pointer;
+  transition:background .2s;
+}
+.cl-buttons button.active,
+.cl-buttons button.grp\.a:hover,
+.cl-buttons button.grp\.b:hover{
+  background:#555; color:#fff;
+}
+
+/* stack previews on mobile */
+@media(max-width:800px){
+  .cl-preview{ flex-direction:column; align-items:center; }
+  .cl-preview img{ width:100%; max-width:380px; }
+}
+
+
+/* --- wrapper keeps two groups centred under the previews --- */
+.cl-buttons{
+  display:flex;
+  gap:1.25rem;                /* space between the two groups */
+  justify-content:center;     /* centre whole block in page */
+  flex-wrap:wrap;             /* stack on narrow screens */
+}
+
+/* each group aligns to width of its preview (360 px) */
+.cl-group{
+  width:360px;                /* if you change img width, update here */
+  display:flex; gap:.75rem; justify-content:center;
+}
+
+/* inherit existing button look */
+.cl-group button{
+  padding:.55rem 1.2rem;
+  background:#e7e7e7; border:2px solid #555; border-radius:.35rem;
+  font-weight:600; cursor:pointer; transition:background .2s;
+}
+.cl-group button.active,
+.cl-group button:hover{ background:#555; color:#fff; }
+
+/* mobile: groups expand full width */
+@media(max-width:800px){
+  .cl-group{ width:100%; }
+}
+
