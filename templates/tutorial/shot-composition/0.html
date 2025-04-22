@@ -1,10 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# loaded through {% include %} inside tutorial_page.html #}
 
-</body>
-</html>
+<!-- page‑specific styles / script -->
+<link rel="stylesheet"
+      href="{{ url_for('static', path='css/editing_overview.css') }}">
+<script defer
+        src="{{ url_for('static', path='js/editing_overview.js') }}"></script>
+
+<p class="lead">
+    Shot types and framing determine what the audience sees and how they perceive relations between elements in the frame.
+</p>
+
+<div class="et-grid">
+  <a class="et-card" href="/category/shot-composition/1">
+    <img src="/static/img/long.jpg" alt="Explore Shot Types">
+    <span class="et-label">Explore&nbsp;Shot&nbsp;Types</span>
+  </a>
+
+  <a class="et-card" href="/category/shot-composition/2">
+    <img src="/static/img/symmetry.jpg" alt="Explore Composition Techniques">
+    <span class="et-label">Explore&nbsp;Composition&nbsp;Techniques</span>
+  </a>
+</div>
