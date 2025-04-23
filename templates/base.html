@@ -1,10 +1,17 @@
+<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}Cinematography Tutorial{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Learn essential cinematography techniques through interactive tutorials and quizzes">
+  <meta name="keywords" content="cinematography, film, camera, tutorial, learning">
+  <title>{% block title %}Cinematography Tutorial{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
-  <script src=https://code.jquery.com/jquery-3.3.1.min.js crossorigin="anonymous"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
   <script src="{{ url_for('static', path='js/main.js') }}" defer></script>
   {% block head_extra %}{% endblock %}
 </head>
@@ -36,10 +43,21 @@
   </nav>
 </header>
 
-<main>{% block content %}{% endblock %}</main>
+<main>
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</main>
 
 <footer class="footer">
-  <small>&copy; 2025 Essential Cinematography Tutorial</small>
+  <div class="footer-content">
+    <small>&copy; 2025 Essential Cinematography Tutorial</small>
+    <div class="footer-links">
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
 </footer>
 </body>
 </html>

@@ -1,3 +1,4 @@
+#server.py
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
@@ -143,7 +144,7 @@ QUIZ_ANSWERS = {
     },
     "q3": {
         "correct_answers": ["POV shot"],
-        "explanation": "A POV shot puts the audience directly in the character’s shoes at that moment of realization."
+        "explanation": "A POV shot puts the audience directly in the character's shoes at that moment of realization."
     },
     "q4": {
         "correct_answers": ["Dutch Angle"],
@@ -157,6 +158,17 @@ QUIZ_ANSWERS = {
 
 class QuizSubmission(BaseModel):
     answers: Dict[str, List[str]]
+
+class QuizProgress(BaseModel):
+    currentIndex: int
+    answers: Dict[str, List[str]]
+    score: int
+
+@app.post("/save_progress")
+async def save_progress(progress: QuizProgress):
+    # Here we're just acknowledging receipt of the progress data
+    # In a real application, you might save this to a database
+    return JSONResponse({"success": True, "message": "Progress saved"})
 
 @app.post("/api/quiz/submit")
 async def submit_quiz(submission: QuizSubmission):
