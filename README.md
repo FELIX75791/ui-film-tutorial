@@ -149,8 +149,25 @@ This project was developed as an assignment for 4170 UI-Design at Columbia Unive
 7. **Question 7: Film Scene Analysis**
    - Correct answers: "Dutch Angle", "Tracking Shot", "Low-Key Lighting"
    - Incorrect: "Handheld Camera", "Rack Focus"
+  
+PS. **`/static/video/complex.mp4` - Used for Question 7 (Film Scene Analysis):**
+   - **Purpose:** This video should be suitable for analyzing various cinematographic techniques. It should include a range of camera movements, lighting setups, and framing styles that can be discussed in terms of their impact on storytelling and visual style.
+   - **Suggestions:**
+     - Look for a scene that includes dynamic camera work, such as tracking shots, dolly zooms, or complex camera movements.
+     - The scene should have varied lighting conditions, such as low-key lighting or high contrast, to discuss mood and atmosphere.
+     - Consider a scene from a film known for its innovative cinematography, like "Inception" or "Birdman."
+Source: https://www.youtube.com/watch?v=X-KDt-G1pJ0
+
 
 8. **Question 8: Advanced Scene Breakdown**
    - Correct answers: "Steadicam Shot", "Symmetrical Framing", "Low Angle"
    - Incorrect: "Dutch Angle", "Whip Pan"
+
+PS. **`/static/video/shining.mp4` - Used for Question 8 (Advanced Scene Breakdown):**
+   - **Purpose:** This video should be suitable for a detailed breakdown of advanced cinematographic techniques. It should include elements like framing, camera angles, and movement that are more sophisticated or unconventional.
+   - **Suggestions:**
+     - Choose a scene that features unique or iconic camera angles, such as low angles, high angles, or Dutch angles.
+     - The scene should have a strong visual style, possibly with symmetrical framing or a distinctive color palette.
+     - Consider a scene from a film known for its visual storytelling, like "The Shining" (which the filename suggests) or "2001: A Space Odyssey."
+Source: https://www.youtube.com/watch?v=F2lU8PnA24A
 
