@@ -1,6 +1,7 @@
 # ui-film-tutorial
 # YouTuBe Video DEMO: https://youtu.be/I0wPwVxinI4
 Team Members: Ziyue Jin, Ken Deng, Linlin Zhang, Cheng Yang
+
 TA: Phoebe Wang
 
 # Essential Cinematography Techniques Tutorial
