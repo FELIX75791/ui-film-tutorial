@@ -1,6 +1,7 @@
 # ui-film-tutorial
 # YouTuBe Video DEMO: https://youtu.be/I0wPwVxinI4
-
+Team Members: Ziyue Jin, Ken Deng, Linlin Zhang, Cheng Yang
+TA: Phoebe Wang
 
 # Essential Cinematography Techniques Tutorial
 
@@ -23,7 +24,7 @@ This Flask application provides an interactive learning experience for mastering
 ```
 cinematography-app/
 │
-├── app.py                 # Main Flask application
+├── server.py                 # Main Flask application
 ├── requirements.txt       # Dependencies
 │
 ├── static/                # Static files
@@ -37,15 +38,15 @@ cinematography-app/
 │   ├── home.html          # Home page
 │   └── ...                # Other page templates
 │
-└── data/                  # User data storage (created at runtime)
+└── data/                  # User data storage (created at runtime) //Temp
 ```
 
 ## Setup Instructions
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/cinematography-tutorial.git
-cd cinematography-tutorial
+git clone https://github.com/FELIX75791/ui-film-tutorial.git
+cd ui-film-tutorial
 ```
 
 2. Create a virtual environment and activate it:
@@ -61,7 +62,7 @@ pip install -r requirements.txt
 
 4. Run the application:
 ```bash
-python app.py
+python server.py
 ```
 
 5. Open your web browser and navigate to:
@@ -69,40 +70,12 @@ python app.py
 http://127.0.0.1:8000/
 ```
 
-## Populating with Media
-
-Before running the application, make sure to populate the static directory with necessary images and videos:
-
-1. Create the following directories:
-```bash
-mkdir -p static/images static/videos
-```
-
-2. Add image files with relevant names as referenced in the JavaScript files:
-   - `camera_angles.jpg`
-   - `shot_types.jpg`
-   - `editing.jpg`
-   - `visual_storytelling.jpg`
-   - `dutch_angles.jpg`
-   - `low_angle.jpg`
-   - `eye_level.jpg`
-   - `high_angle.jpg`
-   etc.
-
-3. Add video files:
-   - `dissolve.mp4`
-   - `fade_in.mp4`
-   - `fade_out.mp4`
-   etc.
-
 ## Group Members and Responsibilities
 
-- [Member 1]: Frontend development (HTML, CSS, JavaScript)
-- [Member 2]: Backend development (Flask routes, data handling)
-- [Member 3]: Content creation and quiz implementation
-- [Member 4]: Design and testing
+- Ziyue Jin, Ken Deng: Frontend development (HTML, CSS, JavaScript) & Backend development (Flask routes, data handling)
+- Cheng Yang, Linlin Zhang: Content creation and quiz implementation & Design and testing
 
-## Assignment Requirements Met
+## Assignment Requirements Met (HW10-Main Apr23)
 
 1. Backend implementation with Flask
 2. Frontend using HTML/JS/jQuery/Bootstrap
@@ -159,7 +132,7 @@ PS. **`/static/video/complex.mp4` - Used for Question 7 (Film Scene Analysis):**
      - Look for a scene that includes dynamic camera work, such as tracking shots, dolly zooms, or complex camera movements.
      - The scene should have varied lighting conditions, such as low-key lighting or high contrast, to discuss mood and atmosphere.
      - Consider a scene from a film known for its innovative cinematography, like "Inception" or "Birdman."
-Source: https://www.youtube.com/watch?v=X-KDt-G1pJ0
+Temp Source: https://www.youtube.com/watch?v=X-KDt-G1pJ0
 
 
 8. **Question 8: Advanced Scene Breakdown**
@@ -172,5 +145,5 @@ PS. **`/static/video/shining.mp4` - Used for Question 8 (Advanced Scene Breakdow
      - Choose a scene that features unique or iconic camera angles, such as low angles, high angles, or Dutch angles.
      - The scene should have a strong visual style, possibly with symmetrical framing or a distinctive color palette.
      - Consider a scene from a film known for its visual storytelling, like "The Shining" (which the filename suggests) or "2001: A Space Odyssey."
-Source: https://www.youtube.com/watch?v=F2lU8PnA24A
+Temp Source: https://www.youtube.com/watch?v=F2lU8PnA24A
 
