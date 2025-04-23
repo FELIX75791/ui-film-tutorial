@@ -25,15 +25,21 @@
     .question-media {
         margin: 1.5rem 0;
         text-align: center;
+        max-width: 100%;
+        overflow: hidden;
     }
     
     .question-media img, 
     .question-media video {
-        max-width: 100%;
+        max-width: 250px;  /* Reduce maximum width further */
+        max-height: 180px; /* Reduce maximum height further */
+        width: auto;       /* Allow the width to adjust based on height constraint */
+        height: auto;      /* Maintain aspect ratio */
         border-radius: 8px;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        display: inline-block; /* Ensure proper centering */
     }
-    
+
     .options-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -189,7 +195,7 @@
     <div class="quiz-content">
         {% if question.image %}
         <div class="question-media">
-            <img src="{{ url_for('static', filename='images/' + question.image) }}" alt="Quiz Question">
+            <img src="{{ url_for('static', filename='images/' + question.image) }}" alt="Quiz Question";">
         </div>
         {% endif %}
         
