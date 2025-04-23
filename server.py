@@ -164,11 +164,28 @@ class QuizProgress(BaseModel):
     answers: Dict[str, List[str]]
     score: int
 
+class TutorialProgress(BaseModel):
+    action: str
+    data: dict
+
 @app.post("/save_progress")
-async def save_progress(progress: QuizProgress):
-    # Here we're just acknowledging receipt of the progress data
-    # In a real application, you might save this to a database
-    return JSONResponse({"success": True, "message": "Progress saved"})
+async def save_progress(request: Request):
+    try:
+        # Get the raw request body
+        body = await request.json()
+        
+        # Log what we received for debugging
+        print(f"Received progress data: {body}")
+        
+        # Here we're just acknowledging receipt of the progress data
+        # In a real application, you might save this to a database
+        return JSONResponse({"success": True, "message": "Progress saved"})
+    except Exception as e:
+        print(f"Error in save_progress: {str(e)}")
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": f"Error saving progress: {str(e)}"}
+        )
 
 @app.post("/api/quiz/submit")
 async def submit_quiz(submission: QuizSubmission):

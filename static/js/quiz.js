@@ -167,7 +167,7 @@ const emoList = document.getElementById('emo-list');
 const feedback = document.getElementById('feedback');
 const submitBtn = document.querySelector('button[type="submit"], #submit-btn, .submit-answer');
 const nextBtn = document.getElementById('next-btn');
-const backBtn = document.getElementById('back-btn');
+  const backBtn = document.getElementById('back-btn');
 
 // Initialize Quiz
 document.addEventListener('DOMContentLoaded', () => {
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const quizQuestion = document.getElementById('quiz-question');
     const quizResults = document.getElementById('quiz-results');
     const submitBtn = document.querySelector('button[type="submit"], #submit-btn, .submit-answer');
-    const nextBtn = document.getElementById('next-btn');
+  const nextBtn = document.getElementById('next-btn');
     const backBtn = document.getElementById('back-btn');
     
     // Check if quiz elements exist (we might be on a different page)
@@ -240,11 +240,11 @@ function showQuestion(index) {
     // Handle media if present
     if (questionMedia && question.media) {
         if (question.media.type === 'image') {
-            questionMedia.innerHTML = `<img src="${question.media.src}" alt="Question Media">`;
+            questionMedia.innerHTML = `<img src="${question.media.src}" alt="Quiz Question" style="width: 100px;">`;
         } else {
             // Add a fallback image if video is not available
             questionMedia.innerHTML = `
-                <video src="${question.media.src}" controls onerror="this.outerHTML='<img src=\'/static/img/fallback-video.jpg\' alt=\'Video not available\'>'"></video>
+                <video src="${question.media.src}" controls onerror="this.outerHTML='<img src=\'fallback-video.jpg/static/img/fallback-video.jpg\' alt=\'Video not available\'>'"></video>
             `;
         }
         questionMedia.classList.remove('hidden');
