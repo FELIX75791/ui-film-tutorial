@@ -1,0 +1,153 @@
+<!-- templates/quiz_results.html -->
+<!-- linlinzhang -->
+{% extends "base.html" %}
+
+{% block title %}Quiz Results - Essential Cinematography Techniques{% endblock %}
+
+{% block head %}
+<style>
+    .results-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .results-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .results-content {
+        background-color: #2a2a2a;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-bottom: 2rem;
+    }
+    
+    .score-display {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .score-value {
+        font-size: 3.5rem;
+        font-weight: bold;
+        color: #5f5f8f;
+        margin-bottom: 0.5rem;
+    }
+    
+    .score-label {
+        font-size: 1.2rem;
+        color: #ccc;
+    }
+    
+    .breakdown-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .breakdown-item {
+        background-color: #1e1e1e;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .item-status {
+        flex: 0 0 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 1rem;
+    }
+    
+    .status-correct {
+        background-color: #28614a;
+    }
+    
+    .status-incorrect {
+        background-color: #614a4a;
+    }
+    
+    .item-details {
+        flex: 1;
+    }
+    
+    .item-question {
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+    
+    .item-answer {
+        color: #aaa;
+        font-size: 0.9rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .btn-large {
+        padding: 1rem 2rem;
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="results-header">
+        <h1>Quiz Results</h1>
+    </div>
+    
+    <div class="results-content">
+        <div class="score-display">
+            <div class="score-value">{{ score }} / {{ total }}</div>
+            <div class="score-label">Correct Answers</div>
+        </div>
+        
+        <div class="breakdown">
+            <h3>Breakdown of Your Answers</h3>
+            <ul class="breakdown-list">
+                {% for question_id, result in session.progress.quiz_answers.items() %}
+                <li class="breakdown-item">
+                    <div class="item-status {% if result.is_correct %}status-correct{% else %}status-incorrect{% endif %}">
+                        {% if result.is_correct %}✓{% else %}✗{% endif %}
+                    </div>
+                    <div class="item-details">
+                        <div class="item-question">Question {{ question_id }}: {{ result.title }}</div>
+                        <div class="item-answer">
+                            {% if result.is_correct %}
+                            Correct
+                            {% else %}
+                            Incorrect - {{ result.explanation }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="action-buttons mt-4">
+            <a href="{{ url_for('overview') }}" class="btn btn-secondary btn-large">Review techniques</a>
+            <a href="{{ url_for('quiz_intro') }}" class="btn btn-secondary btn-large">Retake Quiz</a>
+            <a href="{{ url_for('conclusion') }}" class="btn btn-primary btn-large">Complete Tutorial</a>
+        </div>
+    </div>
+</div>
+
+<!-- Location and Roadmap Icons -->
+<a href="{{ url_for('roadmap') }}">
+    <img src="{{ url_for('static', filename='images/roadmap-icon.png') }}" class="roadmap-icon" alt="Roadmap">
+</a>
+<img src="{{ url_for('static', filename='images/location-icon.png') }}" class="location-icon" alt="Location">
+{% endblock %}

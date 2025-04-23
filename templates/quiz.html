@@ -1,98 +1,89 @@
+<!-- templates/quiz.html -->
 {% extends "base.html" %}
 {% set page = "quiz" %}
 
-{% block title %}Quiz{% endblock %}
+{% block title %}Quiz - Cinematography Tutorial{% endblock %}
+
 {% block head_extra %}
-<style>
-  .hidden { display: none !important; }
-  #quiz-main { background: #000; color: #fff; padding: 2rem; border-radius: 8px; }
-  .btn.primary { background: #6f65a7; color: #fff; padding: .75rem 1.5rem; border: none; border-radius: 4px; }
-  .btn.secondary { background: #444; color: #fff; padding: .75rem 1.5rem; border: none; border-radius: 4px; }
-
-  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-  .options-grid .option {
-    background: #111; padding: .75rem; border-radius: 6px;
-    display: flex; align-items: center; gap: .75rem; cursor: pointer;
-  }
-  .options-grid input { width: 1.2rem; height: 1.2rem; }
-
-  .match-container { display: flex; gap: 2rem; margin-bottom: 1rem; }
-  .match-column { flex: 1; }
-  .match-column p { font-weight: bold; text-transform: uppercase; margin-bottom: .5rem; }
-  .match-column ul { list-style: none; padding: 0; margin: 0; }
-  .tech-item, .emo-box {
-    background: #111; color: #fff; padding: .75rem 1rem; margin-bottom: .5rem;
-    border-radius: 6px; cursor: grab;
-  }
-  .emo-box { cursor: default; }
-  .hovered { outline: 2px dashed #fff; }
-
-  #feedback {
-    border-radius: 6px; padding: 1rem; color: #fff; margin: 1rem 0;
-    text-align: center;
-  }
-  .controls { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-  .controls #submit-btn { flex: 1; }
-</style>
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
 <script src="{{ url_for('static', path='js/quiz.js') }}" defer></script>
+<style>
+  /* Additional inline styles for better visibility */
+  .tech-item.selected {
+    box-shadow: 0 0 0 3px #6c5ce7;
+    position: relative;
+    z-index: 10;
+  }
+  
+  .btn-primary {
+    background-color: #6c5ce7;
+    color: white;
+  }
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  /* Fix for quiz elements */
+  #options-container {
+    margin: 20px 0;
+  }
+  
+  .checkbox-option, .radio-option {
+    display: block;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .checkbox-option:hover, .radio-option:hover {
+    background-color: #e9ecef;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<main id="quiz-main" style="max-width:800px; margin:3rem auto;">
-
-  <!-- INTRO -->
+<div class="quiz-container">
+  <!-- Quiz Intro -->
   <div id="quiz-intro">
-    <h1>Quiz Introduction</h1>
-    <p>Now you’ve learned about essential cinematographic techniques, let’s test your understanding with a short quiz!</p>
-    <p>You’ll identify techniques, match them to emotions, and analyze how they’re used in real films. Good Luck!</p>
-    <div style="display:flex; gap:1rem; margin-top:2rem;">
-      <button id="review-btn" class="btn secondary">REVIEW</button>
-      <button id="begin-btn" class="btn primary">BEGIN</button>
+    <div class="quiz-header">
+      <h1>Cinematography Techniques Quiz</h1>
+      <p>Test your understanding of essential cinematography techniques with this interactive quiz!</p>
+      <p>You'll identify techniques, match them to emotional effects, and analyze how they're used in films.</p>
+    </div>
+    <div class="quiz-buttons">
+      <button id="review-btn" class="btn btn-secondary">Review Material</button>
+      <button id="begin-btn" class="btn btn-primary">Begin Quiz</button>
     </div>
   </div>
 
-  <!-- QUESTION -->
+  <!-- Quiz Questions -->
   <div id="quiz-question" class="hidden">
-    <h2 id="question-title"></h2>
-    <p id="question-text" style="margin-bottom:1rem;"></p>
-    <div id="question-media" style="margin-bottom:1rem;"></div>
-    <form id="question-form"></form>
-
-    <!-- Q2 matching -->
-    <div id="match-exercise" class="match-container hidden">
-      <div class="match-column">
-        <p>TECHNIQUES</p>
-        <ul id="tech-list"></ul>
-      </div>
-      <div class="match-column">
-        <p>EMOTIONS</p>
-        <ul id="emo-list"></ul>
-      </div>
+    <div class="quiz-header">
+      <h2 id="question-title"></h2>
+      <p id="question-text"></p>
     </div>
+    
+    <div id="question-media" class="quiz-media"></div>
+    
+    <div id="options-container" class="quiz-options"></div>
 
-    <div id="feedback" class="hidden"></div>
+    <div id="feedback" class="quiz-feedback hidden"></div>
 
-    <div class="controls">
-      <button id="back-btn" class="btn secondary">BACK</button>
-      <button id="submit-btn" class="btn primary">SUBMIT</button>
-      <button id="next-btn" class="btn primary hidden">NEXT</button>
+    <div class="quiz-buttons">
+      <button id="back-btn" class="btn btn-secondary">Back</button>
+      <button id="submit-btn" class="btn btn-primary">Submit Answer</button>
+      <button id="next-btn" class="btn btn-primary hidden">Next Question</button>
     </div>
   </div>
 
-  <!-- RESULTS -->
+  <!-- Quiz Results -->
   <div id="quiz-results" class="hidden">
-    <h1 id="results-title"></h1>
-    <p id="results-summary"></p>
-    <div style="display:flex; flex-direction:column; gap:1rem; margin-top:2rem;">
-      <button id="review-missed-btn" class="btn secondary">Review questions</button>
-      <button id="return-btn" class="btn secondary">Return to tutorial</button>
-      <button id="complete-btn" class="btn primary">Complete</button>
-    </div>
+    <!-- This will be populated dynamically by the JavaScript -->
   </div>
-
-</main>
+</div>
 {% endblock %}

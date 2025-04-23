@@ -1,0 +1,265 @@
+<!-- templates/quiz_question.html -->
+ <!-- linlinzhang -->
+{% extends "base.html" %}
+
+{% block title %}Quiz Question {{ question.id }} - Essential Cinematography Techniques{% endblock %}
+
+{% block head %}
+<style>
+    .quiz-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .quiz-content {
+        background-color: #1e1e1e;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .question-header {
+        margin-bottom: 2rem;
+    }
+    
+    .question-media {
+        margin: 1.5rem 0;
+        text-align: center;
+    }
+    
+    .question-media img, 
+    .question-media video {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+    
+    .option {
+        background-color: #2a2a2a;
+        padding: 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: background-color 0.3s;
+    }
+    
+    .option:hover {
+        background-color: #3a3a3a;
+    }
+    
+    .option input {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    
+    /* Drag and drop matching */
+    .matching-container {
+        display: flex;
+        gap: 3rem;
+        margin: 2rem 0;
+    }
+    
+    .matching-column {
+        flex: 1;
+    }
+    
+    .matching-column h3 {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .technique-item, 
+    .emotion-box {
+        background-color: #2a2a2a;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    
+    .technique-item {
+        cursor: grab;
+    }
+    
+    .emotion-box {
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed #444;
+    }
+    
+    .emotion-box.hovered {
+        border-color: #5f5f8f;
+        background-color: #3a3a3a;
+    }
+    
+    .emotion-box .technique-item {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    /* Feedback styles */
+    .quiz-feedback {
+        background-color: #2a2a2a;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 1.5rem 0;
+        border-left: 5px solid;
+    }
+    
+    .quiz-feedback.success {
+        border-color: #4CAF50;
+    }
+    
+    .quiz-feedback.error {
+        border-color: #F44336;
+    }
+    
+    .quiz-feedback h3 {
+        margin-top: 0;
+        color: inherit;
+    }
+    
+    .visual-feedback {
+        margin-top: 1rem;
+    }
+    
+    /* Button visibility */
+    .hidden {
+        display: none !important;
+    }
+</style>
+
+{% if question.type == 'matching' %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script>
+    $(function() {
+        $(".technique-item").draggable({
+            helper: "clone",
+            revert: "invalid"
+        });
+        
+        $(".emotion-box").droppable({
+            accept: ".technique-item",
+            hoverClass: "hovered",
+            drop: function(event, ui) {
+                $(this).empty();
+                ui.draggable.clone().css({
+                    position: "relative",
+                    top: 0,
+                    left: 0
+                }).appendTo(this);
+                
+                // Store the match for form submission
+                const technique = ui.draggable.data("technique");
+                const emotion = $(this).data("emotion");
+                $("#" + technique + "-match").val(emotion);
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <div class="question-header">
+        <h1>{{ question.title }}</h1>
+        <p class="lead">{{ question.question }}</p>
+    </div>
+    
+    <div class="quiz-content">
+        {% if question.image %}
+        <div class="question-media">
+            <img src="{{ url_for('static', filename='images/' + question.image) }}" alt="Quiz Question">
+        </div>
+        {% endif %}
+        
+        <form method="post" action="{{ url_for('quiz_question', question_id=question.id) }}">
+            {% if question.type == 'identification' or question.type == 'film_analysis' %}
+                <div class="options-grid">
+                    {% for option in question.options %}
+                    <label class="option">
+                        <input type="checkbox" name="selected[]" value="{{ option.id }}">
+                        {{ option.text }}
+                    </label>
+                    {% endfor %}
+                </div>
+            
+            {% elif question.type == 'best_choice' or question.type == 'emotional_effect' %}
+                <div class="options-grid">
+                    {% for option in question.options %}
+                    <label class="option">
+                        <input type="radio" name="selected" value="{{ option.id }}">
+                        {{ option.text }}
+                    </label>
+                    {% endfor %}
+                </div>
+            
+            {% elif question.type == 'matching' %}
+                <div class="matching-container">
+                    <div class="matching-column">
+                        <h3>TECHNIQUES</h3>
+                        <div class="techniques-list">
+                            {% for pair in question.pairs %}
+                            <div class="technique-item" data-technique="{{ pair.technique|lower|replace(' ', '_') }}">
+                                {{ pair.technique }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="matching-column">
+                        <h3>EMOTIONS</h3>
+                        <div class="emotions-list">
+                            {% for pair in question.pairs %}
+                            <div class="emotion-box" data-emotion="{{ pair.emotion|lower|replace(' ', '_') }}">
+                                <span>{{ pair.emotion }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hidden inputs to store matches -->
+                {% for pair in question.pairs %}
+                <input type="hidden" id="{{ pair.technique|lower|replace(' ', '_') }}-match" name="matches[{{ pair.technique }}]" value="">
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Feedback display area -->
+            <div id="feedback" class="hidden"></div>
+            
+            <div class="nav-buttons">
+                <a href="{{ url_for('quiz_intro') if question.id == 1 else url_for('quiz_question', question_id=question.id-1) }}" class="btn btn-secondary">BACK</a>
+                <button type="submit" class="btn btn-primary">SUBMIT</button>
+                <button id="next-btn" class="btn btn-primary hidden">NEXT</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Location and Roadmap Icons -->
+<a href="{{ url_for('roadmap') }}">
+    <img src="{{ url_for('static', filename='images/roadmap-icon.png') }}" class="roadmap-icon" alt="Roadmap">
+</a>
+<img src="{{ url_for('static', filename='images/location-icon.png') }}" class="location-icon" alt="Location">
+{% endblock %}

@@ -1,0 +1,116 @@
+<!-- templates/quiz_feedback.html -->
+<!-- linlinzhang -->
+{% extends "base.html" %}
+
+{% block title %}Quiz Feedback - Essential Cinematography Techniques{% endblock %}
+
+{% block head %}
+<style>
+    .feedback-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .feedback-header {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .feedback-content {
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-bottom: 2rem;
+    }
+    
+    .feedback-correct {
+        background-color: #28614a;
+    }
+    
+    .feedback-incorrect {
+        background-color: #614a4a;
+    }
+    
+    .feedback-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .feedback-message {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .feedback-explanation {
+        line-height: 1.6;
+    }
+    
+    .visual-hint {
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+    
+    .visual-hint img {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .next-button {
+        text-align: center;
+    }
+    
+    .btn-large {
+        padding: 1rem 2rem;
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feedback-container">
+    <div class="feedback-header">
+        <h1>Quiz Feedback</h1>
+    </div>
+    
+    <div class="feedback-content {% if is_correct %}feedback-correct{% else %}feedback-incorrect{% endif %}">
+        <div class="text-center">
+            <div class="feedback-icon">
+                {% if is_correct %}
+                ✓
+                {% else %}
+                ✗
+                {% endif %}
+            </div>
+            
+            <div class="feedback-message">
+                {% if is_correct %}
+                Correct!
+                {% else %}
+                Incorrect
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="feedback-explanation">
+            <p>{{ question.explanation }}</p>
+        </div>
+        
+        {% if not is_correct and question.image %}
+        <div class="visual-hint">
+            <img src="{{ url_for('static', filename='images/hint_' + question.id|string + '.jpg') }}" alt="Visual Hint">
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="next-button">
+        <a href="{{ url_for('quiz_question', question_id=next_id) }}" class="btn btn-primary btn-large">NEXT QUESTION</a>
+    </div>
+</div>
+
+<!-- Location and Roadmap Icons -->
+<a href="{{ url_for('roadmap') }}">
+    <img src="{{ url_for('static', filename='images/roadmap-icon.png') }}" class="roadmap-icon" alt="Roadmap">
+</a>
+<img src="{{ url_for('static', filename='images/location-icon.png') }}" class="location-icon" alt="Location">
+{% endblock %}

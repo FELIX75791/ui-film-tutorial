@@ -1,11 +1,80 @@
+<!-- templates/overview.html -->
 {% extends "base.html" %}
 {% set page = "overview" %}
-{% block title %}Overview{% endblock %}
+{% block title %}Overview - Cinematography Tutorial{% endblock %}
 
 {% block content %}
-<h1>About This Tutorial</h1>
-<p>This tutorial .....</p>
+<div class="overview-container">
+    <header class="page-header">
+        <h1>Overview</h1>
+        <p class="lead">Camera angles and movement techniques determine how the audience perceives a scene. These techniques can create psychological effects, establish relationships between characters, and guide viewer attention.</p>
+    </header>
 
-<h2>Why Cinematography Techniques Matter</h2>
-<p>I don't know mannnnnn</p>
+    <div class="technique-grid">
+        <div class="technique-card">
+            <div class="technique-image">
+                <img src="/static/img/dutch-angle.jpg" alt="Dutch Angle Example">
+                <div class="technique-overlay">
+                    <h3>Explore Dutch Angle</h3>
+                    <p>Create psychological unease and tension</p>
+                </div>
+            </div>
+            <div class="technique-content">
+                <h3>Dutch Angle</h3>
+                <p>Dutch angles tilt the camera to create psychological unease or tension. Directors use them to show disorientation, psychological distress, or to create visual interest.</p>
+                <a href="/category/angle-movement" class="btn btn-primary">Learn More</a>
+            </div>
+        </div>
+
+        <div class="technique-card">
+            <div class="technique-image">
+                <img src="/static/img/camera-angle.jpg" alt="Camera Angle Example">
+                <div class="technique-overlay">
+                    <h3>Explore Camera Angles</h3>
+                    <p>Establish power dynamics and perspective</p>
+                </div>
+            </div>
+            <div class="technique-content">
+                <h3>Camera Angles</h3>
+                <p>Different camera angles can establish power dynamics, create emotional responses, and guide the viewer's perspective of the scene.</p>
+                <a href="/category/shot-composition" class="btn btn-primary">Learn More</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="learning-path">
+        <h2>Your Learning Path</h2>
+        <div class="path-steps">
+            <div class="path-step">
+                <div class="step-number">1</div>
+                <h3>Fundamentals</h3>
+                <p>Learn basic camera angles and movements</p>
+            </div>
+            <div class="path-step">
+                <div class="step-number">2</div>
+                <h3>Composition</h3>
+                <p>Master shot composition techniques</p>
+            </div>
+            <div class="path-step">
+                <div class="step-number">3</div>
+                <h3>Advanced</h3>
+                <p>Explore complex movements and transitions</p>
+            </div>
+            <div class="path-step">
+                <div class="step-number">4</div>
+                <h3>Practice</h3>
+                <p>Test your knowledge with interactive quizzes</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="cta-section">
+        <h2>Ready to Begin?</h2>
+        <p>Start your journey into cinematography techniques</p>
+        <div class="cta-buttons">
+            <a href="/category/angle-movement" class="btn btn-primary">Start Learning</a>
+            <a href="/quiz" class="btn btn-secondary">Take Quiz</a>
+        </div>
+    </div>
+</div>
 {% endblock %}
