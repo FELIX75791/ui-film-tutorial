@@ -174,3 +174,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Ignore video files
+static/video/complex.mp4
+static/video/shining.mp4
+static/video/complex_compressed.mp4
+static/video/shining_compressed.mp4
