@@ -112,3 +112,45 @@ mkdir -p static/images static/videos
 ## Acknowledgements
 
 This project was developed as an assignment for 4170 UI-Design at Columbia University.
+
+## Reference 
+**Correct Answers for Each Question:**
+
+1. **Question 1: Identify Cinematography Techniques**
+   - Correct answers: "Dutch Angle" and "Low-Key Lighting"
+   - Incorrect: "Tracking Shot" and "Depth of Field"
+
+2. **Question 2: Horror Film Techniques**
+   - Correct answers: "Handheld Camera" and "Extreme Close-Up"
+   - Incorrect: "High-Key Lighting" and "Slow Motion"
+
+3. **Question 3: Technique & Emotional Impact (Matching)**
+   - Correct matches:
+     - Dutch Angle → Disorientation
+     - Tracking Shot → Immersion
+     - Low-Key Lighting → Mystery
+     - Bird's Eye View → Insignificance
+
+4. **Question 4: Lens Choice & Visual Effect (Matching)**
+   - Correct matches:
+     - Wide Angle Lens → Spatial Distortion
+     - Telephoto Lens → Compression
+     - Macro Lens → Extreme Detail
+     - Tilt-Shift Lens → Miniaturization
+
+5. **Question 5: Best Technique Selection**
+   - Correct answer: "Dolly Zoom"
+   - Incorrect: "Slow Motion", "Dutch Angle", "Static Wide Shot"
+
+6. **Question 6: Establishing Atmosphere**
+   - Correct answer: "Extreme Wide Shot"
+   - Incorrect: "Extreme Close-Up", "Eye-Level Medium Shot", "Whip Pan"
+
+7. **Question 7: Film Scene Analysis**
+   - Correct answers: "Dutch Angle", "Tracking Shot", "Low-Key Lighting"
+   - Incorrect: "Handheld Camera", "Rack Focus"
+
+8. **Question 8: Advanced Scene Breakdown**
+   - Correct answers: "Steadicam Shot", "Symmetrical Framing", "Low Angle"
+   - Incorrect: "Dutch Angle", "Whip Pan"
+
