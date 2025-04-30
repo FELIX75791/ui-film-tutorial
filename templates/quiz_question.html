@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="quiz-content" data-question-type="{{ question.type }}">
         {% if question.image %}
         <div class="question-media">
-            <img src="{{ url_for('static', filename=question.image) }}" alt="Quiz Question">
+            <img src="{{ url_for('static', filename=question.image.replace('images/quiz/', 'img/')) }}" alt="Quiz Question">
         </div>
         {% endif %}
         
