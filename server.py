@@ -1,13 +1,14 @@
 #server.py
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, HTTPException, Response
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
 import pathlib, uvicorn
+import json
+import secrets
 
 # ─── tutorial "TOC" ───────────────────────────────────────
 CATEGORIES = [
@@ -47,9 +48,71 @@ SLUG_LABEL  = {
 BASE = pathlib.Path(__file__).resolve().parent
 app = FastAPI(title="Essential Cinematography Tutorial")
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ── assets ───────────────────────────────────────────────
-app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
+# Mount static files with explicit name
+app.mount("/static", StaticFiles(directory=str(BASE / "static")), name="static")
+
+# Initialize templates with proper request context
 templates = Jinja2Templates(directory=str(BASE / "templates"))
+
+# Add custom url_for function to templates
+def url_for(name: str, **path_params: str) -> str:
+    if name == "static":
+        # Handle both filename and path parameters
+        file_path = path_params.get('filename') or path_params.get('path', '')
+        return f"/static/{file_path}"
+    return app.url_path_for(name, **path_params)
+
+templates.env.globals["url_for"] = url_for
+
+# Session handling middleware
+@app.middleware("http")
+async def session_middleware(request: Request, call_next):
+    # Get or create session cookie
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        session_id = secrets.token_urlsafe(32)
+    
+    # Get session data from cookie
+    session_data = request.cookies.get("session_data", "{}")
+    try:
+        session = json.loads(session_data)
+    except json.JSONDecodeError:
+        session = {}
+    
+    # Store session in request state
+    request.state.session = session
+    
+    # Process request
+    response = await call_next(request)
+    
+    # Save session back to cookie
+    if isinstance(response, Response):
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=True,
+            samesite="lax"
+        )
+        response.set_cookie(
+            key="session_data",
+            value=json.dumps(session),
+            httponly=True,
+            secure=True,
+            samesite="lax"
+        )
+    
+    return response
 
 # ── simple pages ─────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
@@ -128,88 +191,215 @@ def tutorial_page(request: Request, slug: str, page_idx: int = 0):
     )
 
 
-# ─── Quiz API ───────────────────────────
-QUIZ_ANSWERS = {
-    "q1": {
-        "correct_answers": ["Low-Key Lighting"],
-        "explanation": (
-            "Low-key lighting emphasizes deep shadows and high contrast between light "
-            "and dark areas. It creates a moody, dramatic, or mysterious atmosphere."
-        )
+# Quiz Data Structure
+QUIZ_DATA = {
+    1: {
+        "id": 1,
+        "type": "identify",
+        "title": "Identify Cinematography Techniques",
+        "question": "Watch the clip and identify which cinematography techniques are being used (select all that apply)",
+        "image": "images/quiz/dutch-angle.jpg",
+        "options": ["Dutch Angle", "Low-Key Lighting", "Tracking Shot", "Depth of Field"],
+        "correct_answers": ["Dutch Angle", "Low-Key Lighting"],
+        "explanation": "This scene uses Dutch Angle to create disorientation and Low-Key Lighting to build atmosphere."
     },
-    # q2 always correct
-    "q2": {
-        "correct_answers": [],
-        "explanation": "Great match!"
+    2: {
+        "id": 2,
+        "type": "identify",
+        "title": "Horror Film Techniques",
+        "question": "Identify which cinematography techniques are used in this horror scene",
+        "image": "images/quiz/horror-scene.jpg",
+        "options": ["Handheld Camera", "High-Key Lighting", "Extreme Close-Up", "Slow Motion"],
+        "correct_answers": ["Handheld Camera", "Extreme Close-Up"],
+        "explanation": "Horror films typically use unstable camera work (handheld) and intimate shots (extreme close-ups) to create anxiety."
     },
-    "q3": {
-        "correct_answers": ["POV shot"],
-        "explanation": "A POV shot puts the audience directly in the character's shoes at that moment of realization."
+    3: {
+        "id": 3,
+        "type": "match",
+        "title": "Technique & Emotional Impact",
+        "question": "Match each technique to the emotion it most effectively creates",
+        "techniques": ["Dutch Angle", "Tracking Shot", "Low-Key Lighting", "Bird's Eye View"],
+        "emotions": ["Disorientation", "Immersion", "Mystery", "Insignificance"],
+        "correct_answers": {
+            "Dutch Angle": "Disorientation",
+            "Tracking Shot": "Immersion",
+            "Low-Key Lighting": "Mystery",
+            "Bird's Eye View": "Insignificance"
+        },
+        "explanation": "Each technique creates a specific psychological effect. Dutch angles disorient, tracking shots immerse, etc."
     },
-    "q4": {
-        "correct_answers": ["Dutch Angle"],
-        "explanation": "Dutch angles skew the frame to convey unease or disorientation in the scene."
+    4: {
+        "id": 4,
+        "type": "match",
+        "title": "Lens Choice & Visual Effect",
+        "question": "Match each lens type with its primary visual effect",
+        "techniques": ["Wide Angle Lens", "Telephoto Lens", "Macro Lens", "Tilt-Shift Lens"],
+        "emotions": ["Spatial Distortion", "Compression", "Extreme Detail", "Miniaturization"],
+        "correct_answers": {
+            "Wide Angle Lens": "Spatial Distortion",
+            "Telephoto Lens": "Compression",
+            "Macro Lens": "Extreme Detail",
+            "Tilt-Shift Lens": "Miniaturization"
+        },
+        "explanation": "Each lens has distinctive effects: wide angles distort space, telephotos compress, etc."
     },
-    "q5": {
-        "correct_answers": ["Fear"],
-        "explanation": "The lighting and framing heighten a sense of fear in the character."
+    5: {
+        "id": 5,
+        "type": "scenario",
+        "title": "Best Technique Selection",
+        "question": "A director wants to show a character suddenly realizing they've been betrayed. Which technique would best capture this moment of realization?",
+        "options": ["Dolly Zoom", "Slow Motion", "Dutch Angle", "Static Wide Shot"],
+        "correct_answer": "Dolly Zoom",
+        "explanation": "The dolly zoom creates a disorienting effect that perfectly captures a moment of shocking realization."
+    },
+    6: {
+        "id": 6,
+        "type": "scenario",
+        "title": "Establishing Atmosphere",
+        "question": "A horror film director wants to establish a sense of isolation and vulnerability for a character alone in a large mansion. Which technique would be most effective?",
+        "options": ["Extreme Close-Up", "Extreme Wide Shot", "Eye-Level Medium Shot", "Whip Pan"],
+        "correct_answer": "Extreme Wide Shot",
+        "explanation": "An extreme wide shot makes the character appear small and vulnerable within the vast, empty space."
+    },
+    7: {
+        "id": 7,
+        "type": "analysis",
+        "title": "Film Scene Analysis",
+        "question": "Watch the clip and identify which techniques are used at different points in the scene",
+        "image": "images/quiz/scene-analysis.jpg",
+        "options": ["Dutch Angle", "Tracking Shot", "Low-Key Lighting", "Handheld Camera", "Rack Focus"],
+        "correct_answers": ["Dutch Angle", "Tracking Shot", "Low-Key Lighting"],
+        "explanation": "The scene features a Dutch angle at the start, followed by a tracking shot, with low-key lighting throughout."
+    },
+    8: {
+        "id": 8,
+        "type": "analysis",
+        "title": "Advanced Scene Breakdown",
+        "question": "Analyze this scene and identify the techniques used",
+        "image": "images/quiz/scene-breakdown.jpg",
+        "options": ["Steadicam Shot", "Symmetrical Framing", "Low Angle", "Dutch Angle", "Whip Pan"],
+        "correct_answers": ["Steadicam Shot", "Symmetrical Framing", "Low Angle"],
+        "explanation": "The scene features a steadicam shot, symmetrical framing, and low angles to create unease."
     }
 }
 
-class QuizSubmission(BaseModel):
-    answers: Dict[str, List[str]]
+# ─── Quiz Routes ──────────────────────────
+@app.get("/quiz", response_class=HTMLResponse)
+async def quiz_redirect():
+    # Redirect to the first question when accessing /quiz
+    return RedirectResponse(url="/quiz/1", status_code=302)
 
-class QuizProgress(BaseModel):
-    currentIndex: int
-    answers: Dict[str, List[str]]
-    score: int
+@app.get("/quiz/results", response_class=HTMLResponse, name="quiz_results")
+async def quiz_results(request: Request):
+    # Get quiz progress from session
+    session = request.state.session
+    quiz_progress = session.get("quiz_progress", {})
+    
+    # Calculate score and prepare results
+    total_questions = len(QUIZ_DATA)
+    score = 0
+    questions = []
+    categories = {
+        "Identification": {"correct": 0, "total": 0},
+        "Matching": {"correct": 0, "total": 0},
+        "Analysis": {"correct": 0, "total": 0},
+        "Scenario": {"correct": 0, "total": 0}
+    }
+    
+    for q_id, question in QUIZ_DATA.items():
+        user_answer = quiz_progress.get(str(q_id))
+        is_correct = False
+        
+        if user_answer:
+            if question["type"] == "match":
+                is_correct = user_answer == question["correct_answers"]
+            elif question["type"] == "scenario":
+                is_correct = user_answer == question["correct_answer"]
+            else:
+                is_correct = set(user_answer) == set(question["correct_answers"])
+        
+        # Update score
+        if is_correct:
+            score += 1
+        
+        # Update category stats
+        category = "Identification" if question["type"] == "identify" else \
+                  "Matching" if question["type"] == "match" else \
+                  "Analysis" if question["type"] == "analysis" else "Scenario"
+        categories[category]["total"] += 1
+        if is_correct:
+            categories[category]["correct"] += 1
+        
+        # Add question details with correct handling of answer types
+        correct_answer = question.get("correct_answers", question.get("correct_answer"))
+        questions.append({
+            "number": q_id,
+            "title": question["title"],
+            "type": question["type"],
+            "correct": is_correct,
+            "user_answer": user_answer,
+            "correct_answer": correct_answer,
+            "explanation": question["explanation"]
+        })
+    
+    # Calculate category percentages
+    category_results = []
+    for name, stats in categories.items():
+        if stats["total"] > 0:
+            percentage = round((stats["correct"] / stats["total"]) * 100)
+            category_results.append({
+                "name": name,
+                "correct": stats["correct"],
+                "total": stats["total"],
+                "percentage": percentage
+            })
+    
+    return templates.TemplateResponse(
+        "quiz_results.html",
+        {
+            "request": request,
+            "score": score,
+            "total_questions": total_questions,
+            "questions": questions,
+            "categories": category_results
+        }
+    )
 
-class TutorialProgress(BaseModel):
-    action: str
-    data: dict
+@app.get("/quiz/{question_id}", response_class=HTMLResponse)
+async def quiz_question(request: Request, question_id: int):
+    # Get quiz progress from session
+    session = request.state.session
+    quiz_progress = session.get("quiz_progress", {})
+    
+    # Validate question_id
+    if question_id < 1 or question_id > len(QUIZ_DATA):
+        raise HTTPException(status_code=404, detail="Question not found")
+    
+    question = QUIZ_DATA[question_id]
+    
+    return templates.TemplateResponse(
+        "quiz_question.html",
+        {
+            "request": request,
+            "current_question": question_id,
+            "total_questions": len(QUIZ_DATA),
+            "question": question,
+            "quiz_progress": quiz_progress
+        }
+    )
 
+# Save Progress Endpoint
 @app.post("/save_progress")
 async def save_progress(request: Request):
     try:
-        # Get the raw request body
-        body = await request.json()
+        # Get the progress data from the request body
+        progress_data = await request.json()
         
-        # Log what we received for debugging
-        print(f"Received progress data: {body}")
-        
-        # Here we're just acknowledging receipt of the progress data
-        # In a real application, you might save this to a database
-        return JSONResponse({"success": True, "message": "Progress saved"})
+        # Store progress in session
+        request.state.session["quiz_progress"] = progress_data
+        return {"status": "success"}
     except Exception as e:
-        print(f"Error in save_progress: {str(e)}")
-        return JSONResponse(
-            status_code=400,
-            content={"success": False, "message": f"Error saving progress: {str(e)}"}
-        )
-
-@app.post("/api/quiz/submit")
-async def submit_quiz(submission: QuizSubmission):
-    score = 0
-    feedback = {}
-
-    for q_id, user_list in submission.answers.items():
-        key = QUIZ_ANSWERS.get(q_id)
-        if not key:
-            continue
-
-        expect = {c.strip().lower() for c in key["correct_answers"]}
-        got    = {u.strip().lower() for u in user_list}
-
-        correct = (not expect) or (got == expect)
-        if correct:
-            score += 1
-
-        feedback[q_id] = {
-            "correct": correct,
-            "explanation": key["explanation"]
-        }
-
-    return JSONResponse({"score": score, "feedback": feedback})
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

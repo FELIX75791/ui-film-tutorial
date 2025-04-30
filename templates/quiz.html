@@ -1,14 +1,9 @@
 <!-- templates/quiz.html -->
 {% extends "base.html" %}
-{% set page = "quiz" %}
 
 {% block title %}Quiz - Cinematography Tutorial{% endblock %}
 
-{% block head_extra %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
-<script src="{{ url_for('static', path='js/quiz.js') }}" defer></script>
+{% block head %}
 <style>
   /* Additional inline styles for better visibility */
   .tech-item.selected {
@@ -44,6 +39,11 @@
     background-color: #e9ecef;
   }
 </style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+<script src="{{ url_for('static', path='js/quiz.js') }}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -57,7 +57,7 @@
     </div>
     <div class="quiz-buttons">
       <button id="review-btn" class="btn btn-secondary">Review Material</button>
-      <button id="begin-btn" class="btn btn-primary">Begin Quiz</button>
+      <a href="{{ url_for('quiz_question', question_id=1) }}" class="btn btn-primary">Begin Quiz</a>
     </div>
   </div>
 
