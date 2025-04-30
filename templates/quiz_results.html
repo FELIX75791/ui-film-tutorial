@@ -8,20 +8,16 @@
 <style>
     .results-container {
         max-width: 800px;
-        margin: 0 auto;
+        margin: 2rem auto;
+        padding: 2rem;
     }
     
     .results-header {
         text-align: center;
         margin-bottom: 3rem;
-    }
-    
-    .results-content {
-        background-color: #2a2a2a;
+        background-color: #f8fafc;
         padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        margin-bottom: 2rem;
+        border-radius: 12px;
     }
     
     .score-display {
@@ -32,47 +28,89 @@
     .score-value {
         font-size: 3.5rem;
         font-weight: bold;
-        color: #5f5f8f;
+        color: #4f46e5;
         margin-bottom: 0.5rem;
     }
     
     .score-label {
         font-size: 1.2rem;
-        color: #ccc;
+        color: #475569;
+    }
+    
+    .category-analysis {
+        margin: 2rem 0;
+        padding: 2rem;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    .category-card {
+        background-color: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+    
+    .category-score {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #4f46e5;
     }
     
     .breakdown-list {
         list-style-type: none;
         padding: 0;
-        margin: 0;
+        margin: 2rem 0;
     }
     
     .breakdown-item {
-        background-color: #1e1e1e;
-        padding: 1rem;
+        background-color: #ffffff;
+        padding: 1.5rem;
         margin-bottom: 1rem;
         border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .breakdown-item.correct {
+        border-left: 4px solid #22c55e;
+    }
+    
+    .breakdown-item.incorrect {
+        border-left: 4px solid #ef4444;
+    }
+    
+    .item-header {
         display: flex;
         align-items: center;
+        margin-bottom: 1rem;
     }
     
     .item-status {
-        flex: 0 0 40px;
-        height: 40px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
         margin-right: 1rem;
+        color: white;
     }
     
     .status-correct {
-        background-color: #28614a;
+        background-color: #22c55e;
     }
     
     .status-incorrect {
-        background-color: #614a4a;
+        background-color: #ef4444;
     }
     
     .item-details {
@@ -80,24 +118,54 @@
     }
     
     .item-question {
-        font-weight: bold;
-        margin-bottom: 0.25rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
     }
     
     .item-answer {
-        color: #aaa;
-        font-size: 0.9rem;
+        color: #475569;
+        margin-bottom: 0.5rem;
+    }
+    
+    .item-explanation {
+        background-color: #f8fafc;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        font-size: 0.95rem;
+        color: #334155;
     }
     
     .action-buttons {
         display: flex;
-        flex-direction: column;
+        justify-content: center;
         gap: 1rem;
+        margin-top: 2rem;
     }
     
-    .btn-large {
-        padding: 1rem 2rem;
-        font-size: 1.2rem;
+    .btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary {
+        background-color: #4f46e5;
+        color: white;
+    }
+    
+    .btn-secondary {
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
     }
 </style>
 {% endblock %}
@@ -106,48 +174,81 @@
 <div class="results-container">
     <div class="results-header">
         <h1>Quiz Results</h1>
-    </div>
-    
-    <div class="results-content">
         <div class="score-display">
-            <div class="score-value">{{ score }} / {{ total }}</div>
+            <div class="score-value">{{ score }} / {{ total_questions }}</div>
             <div class="score-label">Correct Answers</div>
         </div>
-        
-        <div class="breakdown">
-            <h3>Breakdown of Your Answers</h3>
-            <ul class="breakdown-list">
-                {% for question_id, result in session.progress.quiz_answers.items() %}
-                <li class="breakdown-item">
-                    <div class="item-status {% if result.is_correct %}status-correct{% else %}status-incorrect{% endif %}">
-                        {% if result.is_correct %}✓{% else %}✗{% endif %}
-                    </div>
-                    <div class="item-details">
-                        <div class="item-question">Question {{ question_id }}: {{ result.title }}</div>
-                        <div class="item-answer">
-                            {% if result.is_correct %}
-                            Correct
-                            {% else %}
-                            Incorrect - {{ result.explanation }}
-                            {% endif %}
-                        </div>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        
-        <div class="action-buttons mt-4">
-            <a href="{{ url_for('overview') }}" class="btn btn-secondary btn-large">Review techniques</a>
-            <a href="{{ url_for('quiz_intro') }}" class="btn btn-secondary btn-large">Retake Quiz</a>
-            <a href="{{ url_for('conclusion') }}" class="btn btn-primary btn-large">Complete Tutorial</a>
+    </div>
+    
+    <div class="category-analysis">
+        <h2>Performance by Category</h2>
+        <div class="category-grid">
+            {% for category in categories %}
+            <div class="category-card">
+                <h3>{{ category.name }}</h3>
+                <div class="category-score">{{ category.correct }}/{{ category.total }}</div>
+                <div class="category-percentage">{{ category.percentage }}%</div>
+            </div>
+            {% endfor %}
         </div>
     </div>
+    
+    <div class="breakdown">
+        <h2>Question Breakdown</h2>
+        <ul class="breakdown-list">
+            {% for question in questions %}
+            <li class="breakdown-item {{ 'correct' if question.correct else 'incorrect' }}">
+                <div class="item-header">
+                    <div class="item-status {{ 'status-correct' if question.correct else 'status-incorrect' }}">
+                        {{ '✓' if question.correct else '✗' }}
+                    </div>
+                    <div class="item-details">
+                        <div class="item-question">Question {{ question.number }}: {{ question.title }}</div>
+                        <div class="item-answer">
+                            <strong>Your Answer:</strong>
+                            {% if question.type == 'match' %}
+                                {% if question.user_answer %}
+                                    {% for tech, emotion in question.user_answer.items() %}
+                                        {{ tech }} → {{ emotion }}{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    No answer provided
+                                {% endif %}
+                            {% else %}
+                                {% if question.user_answer %}
+                                    {{ question.user_answer if question.type == 'scenario' else question.user_answer|join(', ') }}
+                                {% else %}
+                                    No answer provided
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="item-answer">
+                            <strong>Correct Answer:</strong>
+                            {% if question.type == 'match' %}
+                                {% if question.correct_answer %}
+                                    {% for tech, emotion in question.correct_answer.items() %}
+                                        {{ tech }} → {{ emotion }}{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            {% else %}
+                                {{ question.correct_answer if question.type == 'scenario' else question.correct_answer|join(', ') }}
+                            {% endif %}
+                        </div>
+                        {% if question.explanation %}
+                        <div class="item-explanation">
+                            <strong>Explanation:</strong> {{ question.explanation }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="action-buttons">
+        <a href="/overview" class="btn btn-secondary">Return to Overview</a>
+        <a href="/quiz/1" class="btn btn-primary">Retake Quiz</a>
+    </div>
 </div>
-
-<!-- Location and Roadmap Icons -->
-<a href="{{ url_for('roadmap') }}">
-    <img src="{{ url_for('static', filename='images/roadmap-icon.png') }}" class="roadmap-icon" alt="Roadmap">
-</a>
-<img src="{{ url_for('static', filename='images/location-icon.png') }}" class="location-icon" alt="Location">
 {% endblock %}

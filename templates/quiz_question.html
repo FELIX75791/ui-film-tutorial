@@ -1,271 +1,663 @@
 <!-- templates/quiz_question.html -->
- <!-- linlinzhang -->
+<!-- linlinzhang -->
 {% extends "base.html" %}
 
-{% block title %}Quiz Question {{ question.id }} - Essential Cinematography Techniques{% endblock %}
+{% block title %}Question {{ current_question }} - Quiz{% endblock %}
 
 {% block head %}
 <style>
+    /* Quiz container styles */
     .quiz-container {
         max-width: 800px;
         margin: 0 auto;
-    }
-    
-    .quiz-content {
-        background-color: #1e1e1e;
         padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-    
-    .question-header {
-        margin-bottom: 2rem;
-    }
-    
-    .question-media {
-        margin: 1.5rem 0;
-        text-align: center;
-        max-width: 100%;
-        overflow: hidden;
-    }
-    
-    .question-media img, 
-    .question-media video {
-        max-width: 250px;  /* Reduce maximum width further */
-        max-height: 180px; /* Reduce maximum height further */
-        width: auto;       /* Allow the width to adjust based on height constraint */
-        height: auto;      /* Maintain aspect ratio */
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-        display: inline-block; /* Ensure proper centering */
+        background-color: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
+    /* Question header styles */
+    .question-header {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background-color: #f8fafc;
+        border-radius: 12px;
+    }
+
+    .question-header h1 {
+        font-size: 1.8rem;
+        color: #1e293b;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .question-header h2 {
+        font-size: 1.4rem;
+        color: #334155;
+        margin-bottom: 1rem;
+    }
+
+    .question-header p {
+        color: #475569;
+        font-size: 1.1rem;
+        line-height: 1.5;
+    }
+
+    /* Quiz content area */
+    .quiz-content {
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Options grid for checkbox/radio questions */
     .options-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 1rem;
         margin: 1.5rem 0;
     }
-    
+
     .option {
-        background-color: #2a2a2a;
-        padding: 1rem;
+        background-color: #f8fafc;
+        padding: 1rem 1.5rem;
         border-radius: 8px;
         cursor: pointer;
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        transition: background-color 0.3s;
+        transition: all 0.2s ease;
+        border: 1px solid #e2e8f0;
     }
-    
+
     .option:hover {
-        background-color: #3a3a3a;
+        background-color: #f1f5f9;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
-    
-    .option input {
-        width: 20px;
-        height: 20px;
+
+    .option input[type="checkbox"],
+    .option input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #4f46e5;
     }
-    
+
+    .option span {
+        color: #334155;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    /* Question media */
+    .question-media {
+        margin: 1.5rem 0;
+        text-align: center;
+        background-color: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 12px;
+    }
+
+    .question-media img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Navigation buttons */
+    .button-container {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background-color: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
     .nav-buttons {
         display: flex;
         justify-content: space-between;
-        margin-top: 2rem;
+        align-items: center;
+        gap: 1rem;
     }
-    
-    /* Drag and drop matching */
+
+    .btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        text-align: center;
+        min-width: 120px;
+    }
+
+    .btn-primary {
+        background-color: #4f46e5;
+        color: white;
+        box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background-color: #4338ca;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-secondary {
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background-color: #e2e8f0;
+        color: #334155;
+        transform: translateY(-1px);
+    }
+
+    /* Feedback message */
+    .quiz-feedback {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        border-radius: 8px;
+        background-color: #ffffff;
+        border: 1px solid;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .quiz-feedback.success {
+        background-color: #f0fdf4;
+        border-color: #86efac;
+        color: #166534;
+    }
+
+    .quiz-feedback.error {
+        background-color: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+    }
+
+    .quiz-feedback h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .quiz-feedback p {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    /* Help text for correct answers */
+    .help-text {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #f8fafc;
+        border-radius: 8px;
+        color: #475569;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        border-left: 3px solid #4f46e5;
+    }
+
+    /* Matching question styles */
     .matching-container {
         display: flex;
-        gap: 3rem;
+        justify-content: space-between;
+        gap: 2rem;
         margin: 2rem 0;
+        background-color: #f5f5f5;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     
     .matching-column {
         flex: 1;
+        background-color: #ffffff;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
     
     .matching-column h3 {
+        color: #333;
         text-align: center;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
     }
     
-    .technique-item, 
-    .emotion-box {
-        background-color: #2a2a2a;
-        padding: 1rem;
-        margin-bottom: 0.5rem;
+    #tech-list .technique-item {
+        background-color: #eef2ff;
+        padding: 1rem 1.5rem;
+        margin-bottom: 0.8rem;
         border-radius: 8px;
-        cursor: pointer;
+        cursor: move;
+        user-select: none;
+        transition: all 0.2s ease;
+        color: #4338ca;
+        border: 1px solid #e0e7ff;
+        font-weight: 500;
     }
     
-    .technique-item {
-        cursor: grab;
+    .technique-item:hover {
+        background-color: #e0e7ff;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(67, 56, 202, 0.1);
+    }
+    
+    .technique-item.ui-draggable-dragging {
+        opacity: 0.9;
+        transform: scale(1.05);
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(67, 56, 202, 0.15);
     }
     
     .emotion-box {
+        background-color: #f8fafc;
+        padding: 1rem 1.5rem;
+        margin-bottom: 0.8rem;
+        border-radius: 8px;
         min-height: 60px;
+        border: 2px dashed #cbd5e1;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 2px dashed #444;
+        color: #64748b;
     }
     
-    .emotion-box.hovered {
-        border-color: #5f5f8f;
-        background-color: #3a3a3a;
+    .emotion-box.ui-droppable-active {
+        border-color: #818cf8;
+        background-color: #f5f3ff;
+    }
+    
+    .emotion-box.ui-droppable-hover {
+        background-color: #ede9fe;
+        border-color: #6366f1;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
     }
     
     .emotion-box .technique-item {
         width: 100%;
         margin-bottom: 0;
     }
-    
-    /* Feedback styles */
-    .quiz-feedback {
-        background-color: #2a2a2a;
-        padding: 1.5rem;
-        border-radius: 8px;
-        margin: 1.5rem 0;
-        border-left: 5px solid;
-    }
-    
-    .quiz-feedback.success {
-        border-color: #4CAF50;
-    }
-    
-    .quiz-feedback.error {
-        border-color: #F44336;
-    }
-    
-    .quiz-feedback h3 {
-        margin-top: 0;
-        color: inherit;
-    }
-    
-    .visual-feedback {
-        margin-top: 1rem;
-    }
-    
-    /* Button visibility */
-    .hidden {
-        display: none !important;
-    }
 </style>
 
-{% if question.type == 'matching' %}
+<script type="text/javascript">
+    // Initialize quiz state from template variables
+    var quizProgress = {{ quiz_progress|tojson|safe }};
+    var currentQuestion = {{ current_question }};
+    var totalQuestions = {{ total_questions }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        window.QUIZ_STATE = {
+            progress: quizProgress,
+            currentQuestion: currentQuestion,
+            totalQuestions: totalQuestions
+        };
+    });
+</script>
+
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+
+<!-- Add jQuery UI for better drag and drop support -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-<script>
-    $(function() {
-        $(".technique-item").draggable({
-            helper: "clone",
-            revert: "invalid"
-        });
-        
-        $(".emotion-box").droppable({
-            accept: ".technique-item",
-            hoverClass: "hovered",
-            drop: function(event, ui) {
-                $(this).empty();
-                ui.draggable.clone().css({
-                    position: "relative",
-                    top: 0,
-                    left: 0
-                }).appendTo(this);
-                
-                // Store the match for form submission
-                const technique = ui.draggable.data("technique");
-                const emotion = $(this).data("emotion");
-                $("#" + technique + "-match").val(emotion);
-            }
-        });
-    });
-</script>
-{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="quiz-container">
     <div class="question-header">
-        <h1>{{ question.title }}</h1>
+        <h1>Question {{ current_question }} of {{ total_questions }}</h1>
+        <h2>{{ question.title }}</h2>
         <p class="lead">{{ question.question }}</p>
     </div>
     
-    <div class="quiz-content">
+    <div class="quiz-content" data-question-type="{{ question.type }}">
         {% if question.image %}
         <div class="question-media">
-            <img src="{{ url_for('static', filename='images/' + question.image) }}" alt="Quiz Question";">
+            <img src="{{ url_for('static', filename=question.image) }}" alt="Quiz Question">
         </div>
         {% endif %}
         
-        <form method="post" action="{{ url_for('quiz_question', question_id=question.id) }}">
-            {% if question.type == 'identification' or question.type == 'film_analysis' %}
+        <form id="question-form" class="quiz-form" onsubmit="return false;">
+            {% if question.type in ['identify', 'analysis'] %}
                 <div class="options-grid">
                     {% for option in question.options %}
                     <label class="option">
-                        <input type="checkbox" name="selected[]" value="{{ option.id }}">
-                        {{ option.text }}
+                        <input type="checkbox" name="answer" value="{{ option }}">
+                        <span>{{ option }}</span>
                     </label>
                     {% endfor %}
                 </div>
-            
-            {% elif question.type == 'best_choice' or question.type == 'emotional_effect' %}
+            {% elif question.type == 'scenario' %}
                 <div class="options-grid">
                     {% for option in question.options %}
                     <label class="option">
-                        <input type="radio" name="selected" value="{{ option.id }}">
-                        {{ option.text }}
+                        <input type="radio" name="answer" value="{{ option }}">
+                        <span>{{ option }}</span>
                     </label>
                     {% endfor %}
                 </div>
-            
-            {% elif question.type == 'matching' %}
+            {% elif question.type == 'match' %}
                 <div class="matching-container">
                     <div class="matching-column">
-                        <h3>TECHNIQUES</h3>
-                        <div class="techniques-list">
-                            {% for pair in question.pairs %}
-                            <div class="technique-item" data-technique="{{ pair.technique|lower|replace(' ', '_') }}">
-                                {{ pair.technique }}
+                        <h3>Techniques</h3>
+                        <div id="tech-list">
+                            {% for technique in question.techniques %}
+                            <div class="technique-item" data-technique="{{ technique }}">
+                                {{ technique }}
                             </div>
                             {% endfor %}
                         </div>
                     </div>
-                    
                     <div class="matching-column">
-                        <h3>EMOTIONS</h3>
-                        <div class="emotions-list">
-                            {% for pair in question.pairs %}
-                            <div class="emotion-box" data-emotion="{{ pair.emotion|lower|replace(' ', '_') }}">
-                                <span>{{ pair.emotion }}</span>
+                        <h3>Effects</h3>
+                        <div id="emo-list">
+                            {% for emotion in question.emotions %}
+                            <div class="emotion-box" data-emotion="{{ emotion }}">
+                                {{ emotion }}
                             </div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
-                
-                <!-- Hidden inputs to store matches -->
-                {% for pair in question.pairs %}
-                <input type="hidden" id="{{ pair.technique|lower|replace(' ', '_') }}-match" name="matches[{{ pair.technique }}]" value="">
-                {% endfor %}
             {% endif %}
             
-            <!-- Feedback display area -->
-            <div id="feedback" class="hidden"></div>
-            
-            <div class="nav-buttons">
-                <a href="{{ url_for('quiz_intro') if question.id == 1 else url_for('quiz_question', question_id=question.id-1) }}" class="btn btn-secondary">BACK</a>
-                <button type="submit" class="btn btn-primary">SUBMIT</button>
-                <button id="next-btn" class="btn btn-primary hidden">NEXT</button>
+            <div class="button-container">
+                <div class="nav-buttons">
+                    <div class="left-buttons">
+                        {% if current_question > 1 %}
+                        <a href="/quiz/{{ current_question - 1 }}" class="btn btn-secondary">Previous</a>
+                        {% else %}
+                        <button type="button" class="btn btn-secondary" disabled>Previous</button>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="center-buttons">
+                        <button type="button" id="submit-btn" class="btn btn-primary">Submit Answer</button>
+                        {% if current_question < total_questions %}
+                        <a href="/quiz/{{ current_question + 1 }}" id="next-btn" class="btn btn-secondary">Next Question</a>
+                        {% else %}
+                        <a href="/quiz/results" id="next-btn" class="btn btn-secondary">Finish Quiz</a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </form>
+        
+        <div id="feedback" class="quiz-feedback">
+            <h3></h3>
+            <p></p>
+        </div>
     </div>
 </div>
 
-<!-- Location and Roadmap Icons -->
-<a href="{{ url_for('roadmap') }}">
-    <img src="{{ url_for('static', filename='images/roadmap-icon.png') }}" class="roadmap-icon" alt="Roadmap">
-</a>
-<img src="{{ url_for('static', filename='images/location-icon.png') }}" class="location-icon" alt="Location">
+<!-- Hidden element to store quiz progress -->
+<script id="quiz-progress" type="application/json">
+    {{ quiz_progress|tojson|safe }}
+</script>
+
+<script>
+$(document).ready(function() {
+    // Initialize drag and drop if we're on a matching question
+    if ($('.matching-container').length) {
+        initializeMatchingQuestion();
+    }
+});
+
+function initializeMatchingQuestion() {
+    // Make technique items draggable
+    $('.technique-item').draggable({
+        revert: 'invalid',
+        helper: 'clone',
+        cursor: 'move',
+        start: function(event, ui) {
+            $(this).addClass('dragging');
+        },
+        stop: function(event, ui) {
+            $(this).removeClass('dragging');
+        }
+    });
+
+    // Make emotion boxes droppable
+    $('.emotion-box').droppable({
+        accept: '.technique-item',
+        hoverClass: 'ui-droppable-hover',
+        drop: function(event, ui) {
+            const $droppedItem = ui.draggable;
+            const $dropZone = $(this);
+            const $existingItem = $dropZone.find('.technique-item');
+
+            // If there's already an item in this box
+            if ($existingItem.length) {
+                // Move existing item back to tech list
+                $('#tech-list').append($existingItem);
+            }
+
+            // Move dropped item to this box
+            $dropZone.empty().append($droppedItem);
+            $droppedItem.css({
+                top: 0,
+                left: 0,
+                position: 'relative'
+            });
+
+            checkAllMatched();
+        }
+    });
+}
+
+function checkAllMatched() {
+    const allMatched = $('.emotion-box').toArray().every(box => $(box).find('.technique-item').length > 0);
+    $('#submit-btn').prop('disabled', !allMatched);
+}
+
+// Handle submit button click
+$('#submit-btn').click(function(e) {
+    e.preventDefault();
+    
+    const answers = {};
+    $('.emotion-box').each(function() {
+        const $box = $(this);
+        const $technique = $box.find('.technique-item');
+        if ($technique.length) {
+            answers[$technique.data('technique')] = $box.data('emotion');
+        }
+    });
+
+    // Save progress
+    $.ajax({
+        url: '/save_progress',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            answers: {
+                [{{ current_question }}]: answers
+            }
+        }),
+        success: function(data) {
+            // Show feedback
+            const $feedback = $('#feedback');
+            $feedback.html(`
+                <h3>${data.isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+                <p>${data.feedback || 'Keep trying!'}</p>
+            `).show();
+            
+            // Enable next button
+            $('#next-btn').addClass('active');
+        },
+        error: function() {
+            alert('Failed to save your answer. Please try again.');
+        }
+    });
+});
+</script>
+
+<!-- Add this section after the quiz content to show correct answers -->
+<script>
+// Quiz answers helper
+const quizAnswers = {
+    1: {
+        type: 'identify',
+        correct: ['Dutch Angle', 'Low-Key Lighting'],
+        explanation: 'The Dutch Angle creates disorientation while Low-Key Lighting builds atmosphere.'
+    },
+    2: {
+        type: 'identify',
+        correct: ['Handheld Camera', 'Extreme Close-Up'],
+        explanation: 'Handheld camera creates unease while extreme close-ups intensify emotions.'
+    },
+    3: {
+        type: 'match',
+        correct: {
+            'Dutch Angle': 'Disorientation',
+            'Tracking Shot': 'Immersion',
+            'Low-Key Lighting': 'Mystery',
+            'Bird\'s Eye View': 'Insignificance'
+        },
+        explanation: 'Each technique creates a specific psychological effect on the viewer.'
+    },
+    4: {
+        type: 'match',
+        correct: {
+            'Wide Angle Lens': 'Spatial Distortion',
+            'Telephoto Lens': 'Compression',
+            'Macro Lens': 'Extreme Detail',
+            'Tilt-Shift Lens': 'Miniaturization'
+        },
+        explanation: 'Different lenses create distinct visual effects that serve various storytelling purposes.'
+    },
+    5: {
+        type: 'scenario',
+        correct: 'Dolly Zoom',
+        explanation: 'The dolly zoom (pushing in while zooming out) creates a disorienting effect perfect for moments of revelation.'
+    },
+    6: {
+        type: 'scenario',
+        correct: 'Extreme Wide Shot',
+        explanation: 'An extreme wide shot makes the character appear small and vulnerable within the vast space.'
+    },
+    7: {
+        type: 'analysis',
+        correct: ['Dutch Angle', 'Tracking Shot', 'Low-Key Lighting'],
+        explanation: 'These techniques combine to create a complex and atmospheric scene.'
+    },
+    8: {
+        type: 'analysis',
+        correct: ['Steadicam Shot', 'Symmetrical Framing', 'Low Angle'],
+        explanation: 'Kubrick\'s signature style combines smooth camera movement with precise composition.'
+    }
+};
+
+// Add help text after submitting
+document.getElementById('submit-btn')?.addEventListener('click', function() {
+    setTimeout(() => {
+        const currentQ = {{ current_question }};
+        const answer = quizAnswers[currentQ];
+        if (answer) {
+            const helpText = document.createElement('div');
+            helpText.className = 'help-text';
+            helpText.innerHTML = `
+                <strong>Correct Answer:</strong><br>
+                ${Array.isArray(answer.correct) ? 
+                    answer.correct.join(', ') : 
+                    (typeof answer.correct === 'object' ? 
+                        Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
+                        answer.correct)
+                }<br><br>
+                <strong>Explanation:</strong><br>
+                ${answer.explanation}
+            `;
+            document.querySelector('.quiz-feedback')?.appendChild(helpText);
+        }
+    }, 500);
+});
+</script>
+
+<!-- Update the submit button handling -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const submitBtn = document.getElementById('submit-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const feedbackDiv = document.getElementById('feedback');
+    
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get selected answers based on question type
+            let answers;
+            const questionType = document.querySelector('.quiz-content').getAttribute('data-question-type');
+            
+            if (questionType === 'scenario') {
+                const selectedRadio = document.querySelector('input[type="radio"]:checked');
+                answers = selectedRadio ? selectedRadio.value : null;
+            } else if (questionType === 'identify' || questionType === 'analysis') {
+                answers = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                    .map(input => input.value);
+            } else if (questionType === 'match') {
+                answers = {};
+                document.querySelectorAll('.emotion-box').forEach(box => {
+                    const technique = box.querySelector('.technique-item')?.getAttribute('data-technique');
+                    const emotion = box.getAttribute('data-emotion');
+                    if (technique && emotion) {
+                        answers[technique] = emotion;
+                    }
+                });
+            }
+            
+            // Save progress
+            fetch('/save_progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    answers: {
+                        [currentQuestion]: answers
+                    }
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to save progress');
+                return response.json();
+            })
+            .then(data => {
+                // Show feedback with correct/incorrect status but without revealing answer
+                if (feedbackDiv) {
+                    feedbackDiv.style.display = 'block';
+                    feedbackDiv.innerHTML = `
+                        <h3>${data.isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+                        <p>${data.isCorrect ? 'Well done! You can proceed to the next question.' : 'Not quite right. You can try again or proceed to the next question.'}</p>
+                    `;
+                    feedbackDiv.className = `quiz-feedback ${data.isCorrect ? 'success' : 'error'}`;
+                }
+                
+                // Enable next button
+                if (nextBtn) {
+                    nextBtn.style.opacity = '1';
+                    nextBtn.style.pointerEvents = 'auto';
+                }
+                
+                // Disable submit button after submission
+                submitBtn.disabled = true;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to save your answer. Please try again.');
+            });
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -148,7 +148,8 @@ const questions = [
     }
 ];
 
-let currentQuestion = 0;
+// Quiz state management
+let currentQuestionId = 1;
 let userAnswers = {};
 let score = 0;
 
@@ -165,21 +166,20 @@ const matchExercise = document.getElementById('match-exercise');
 const techList = document.getElementById('tech-list');
 const emoList = document.getElementById('emo-list');
 const feedback = document.getElementById('feedback');
-const submitBtn = document.querySelector('button[type="submit"], #submit-btn, .submit-answer');
-const nextBtn = document.getElementById('next-btn');
-  const backBtn = document.getElementById('back-btn');
 
 // Initialize Quiz
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("Quiz script loaded");
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Quiz script loaded');
+
+    // Get quiz state from template
+    const quizState = window.QUIZ_STATE || {};
+    currentQuestionId = quizState.currentQuestion || 1;
+    userAnswers = (quizState.progress && quizState.progress.answers) || {};
     
     // Get all necessary elements after DOM is loaded
     const quizIntro = document.getElementById('quiz-intro');
     const quizQuestion = document.getElementById('quiz-question');
     const quizResults = document.getElementById('quiz-results');
-    const submitBtn = document.querySelector('button[type="submit"], #submit-btn, .submit-answer');
-  const nextBtn = document.getElementById('next-btn');
-    const backBtn = document.getElementById('back-btn');
     
     // Check if quiz elements exist (we might be on a different page)
     if (!quizIntro) return console.log("Quiz intro not found");
@@ -189,16 +189,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('review-btn')?.addEventListener('click', () => window.location.href = '/overview');
     
     // Add click events to the submit and navigation buttons
-    submitBtn?.addEventListener('click', function(e) {
-        e.preventDefault();
-        submitAnswer();
-    });
+    const submitBtn = document.getElementById('submit-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const feedbackDiv = document.getElementById('feedback');
     
-    nextBtn?.addEventListener('click', function() {
-        nextQuestion();
-    });
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            submitAnswer();
+        });
+    }
     
-    backBtn?.addEventListener('click', previousQuestion);
+    if (nextBtn) {
+        // Initially hide the next button
+        nextBtn.style.display = 'none';
+        
+        nextBtn.addEventListener('click', function() {
+            const nextQuestionId = currentQuestionId + 1;
+            if (nextQuestionId <= questions.length) {
+                window.location.href = `/quiz/${nextQuestionId}`;
+            } else {
+                window.location.href = '/quiz/results';
+            }
+        });
+    }
     
     // Results page buttons
     document.getElementById('review-missed-btn')?.addEventListener('click', reviewMissedQuestions);
@@ -207,20 +221,36 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Start with the first question if not on intro page
     if (quizQuestion && !quizQuestion.classList.contains('hidden')) {
-        showQuestion(currentQuestion);
+        showQuestion(currentQuestionId - 1);
     }
     
     // Initialize drag and drop if we're on a matching question
-    if (document.querySelector('.tech-item')) {
-        initializeDragDrop();
+    initializeDragAndDrop();
+    
+    // Load saved answers from session on page load
+    const pathParts = window.location.pathname.split('/');
+    currentQuestionId = parseInt(pathParts[pathParts.length - 1]) || 1;
+    
+    // Get quiz progress from the template
+    const quizProgressElement = document.getElementById('quiz-progress');
+    if (quizProgressElement) {
+        try {
+            const quizProgress = JSON.parse(quizProgressElement.textContent);
+            userAnswers = quizProgress.answers || {};
+            
+            // Restore saved answers for current question
+            restoreSavedAnswers();
+        } catch (e) {
+            console.error("Error loading quiz progress:", e);
+        }
     }
 });
 
 function startQuiz() {
-    currentQuestion = 0;
+    currentQuestionId = 1;
     userAnswers = {};
     score = 0;
-    showQuestion(currentQuestion);
+    showQuestion(currentQuestionId - 1);
 }
 
 function showQuestion(index) {
@@ -406,19 +436,15 @@ function renderMatchingExercise(question) {
     optionsContainer.appendChild(matchContainer);
     
     // Initialize drag and drop
-    initializeDragDrop();
+    initializeDragAndDrop();
 }
 
-function initializeDragDrop() {
-    console.log("Initializing drag and drop");
-    const techItems = document.querySelectorAll('.tech-item');
-    const emoBoxes = document.querySelectorAll('.emo-box');
+function initializeDragAndDrop() {
+    const techItems = document.querySelectorAll('.technique-item');
+    const emoBoxes = document.querySelectorAll('.emotion-box');
     
-    if (!techItems.length || !emoBoxes.length) {
-        console.warn("Drag and drop elements not found");
-          return;
-      }
-      
+    if (!techItems.length || !emoBoxes.length) return;
+    
     let draggedItem = null;
     
     techItems.forEach(item => {
@@ -426,12 +452,10 @@ function initializeDragDrop() {
             draggedItem = this;
             setTimeout(() => this.classList.add('dragging'), 0);
             e.dataTransfer.setData('text/plain', '');
-            console.log("Drag started", this.textContent);
         });
         
         item.addEventListener('dragend', function() {
             this.classList.remove('dragging');
-            console.log("Drag ended");
         });
     });
     
@@ -450,11 +474,9 @@ function initializeDragDrop() {
             this.classList.remove('drag-over');
             
             if (draggedItem) {
-                console.log("Dropped", draggedItem.textContent, "onto", this.textContent);
-                
                 // Remove from previous location if already placed
                 const parent = draggedItem.parentNode;
-                if (parent.classList.contains('emo-box')) {
+                if (parent.classList.contains('emotion-box')) {
                     parent.removeAttribute('data-matched');
                 }
                 
@@ -464,67 +486,33 @@ function initializeDragDrop() {
             }
         });
     });
-    
-    // Fallback for mobile: make items clickable
-    techItems.forEach(item => {
-        item.addEventListener('click', function() {
-            // Toggle selected state
-            if (this.classList.contains('selected')) {
-                this.classList.remove('selected');
-                return;
-            }
-            
-            // Remove selected class from other items
-            techItems.forEach(i => i.classList.remove('selected'));
-            
-            // Add selected class to clicked item
-            this.classList.add('selected');
-            draggedItem = this;
-        });
-    });
-    
-    emoBoxes.forEach(box => {
-        box.addEventListener('click', function() {
-            if (!draggedItem || !draggedItem.classList.contains('selected')) return;
-            
-            // Remove from previous location if already placed
-            const parent = draggedItem.parentNode;
-            if (parent.classList.contains('emo-box')) {
-                parent.removeAttribute('data-matched');
-            }
-            
-            // Add to new location
-            this.appendChild(draggedItem);
-            this.setAttribute('data-matched', draggedItem.getAttribute('data-technique'));
-            draggedItem.classList.remove('selected');
-        });
-    });
 }
 
 function submitAnswer() {
     console.log("Submitting answer");
-    const question = questions[currentQuestion];
+    const question = questions[currentQuestionId - 1];
     if (!question) return console.error("Question not found on submit");
     
     let isCorrect = false;
     let userAnswer;
     
+    // Get answers based on question type
     switch (question.type) {
         case 'identify':
         case 'analysis':
-            userAnswer = Array.from(document.querySelectorAll(`input[name="${question.id}"]:checked`))
+            userAnswer = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
                 .map(input => input.value);
             isCorrect = arraysEqual(userAnswer.sort(), question.correctAnswers.sort());
             break;
             
         case 'scenario':
-            userAnswer = document.querySelector(`input[name="${question.id}"]:checked`)?.value;
+            userAnswer = document.querySelector('input[type="radio"]:checked')?.value;
             isCorrect = userAnswer === question.correctAnswer;
             break;
             
         case 'match':
             userAnswer = {};
-            document.querySelectorAll('.emo-box').forEach(box => {
+            document.querySelectorAll('.emotion-box').forEach(box => {
                 const technique = box.getAttribute('data-matched');
                 const emotion = box.getAttribute('data-emotion');
                 if (technique) {
@@ -532,7 +520,6 @@ function submitAnswer() {
                 }
             });
             
-            // Check if all matches are correct and all techniques are matched
             const allMatched = question.techniques.every(tech => userAnswer[tech] !== undefined);
             const allCorrect = Object.entries(userAnswer).every(([tech, emotion]) => 
                 question.correctMatches[tech] === emotion
@@ -542,81 +529,81 @@ function submitAnswer() {
             break;
     }
     
-    userAnswers[question.id] = userAnswer;
-    if (isCorrect) score++;
-    
-    // Save progress to localStorage
+    // Save progress to server
     const progressData = {
-        currentIndex: currentQuestion,
-        answers: userAnswers,
-        score: score
+        currentQuestion: currentQuestionId,
+        answers: {
+            [question.id]: userAnswer
+        }
     };
     
-    localStorage.setItem('quizProgress', JSON.stringify(progressData));
-    
-    // Also save to server if available
-    try {
-        fetch('/save_progress', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(progressData)
-        }).catch(error => {
-            console.log('Progress saving to server failed, but continued locally:', error);
-        });
-    } catch (error) {
-        console.log('Error saving progress, but continuing:', error);
-    }
-    
-    showFeedback(question, isCorrect);
+    fetch('/save_progress', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(progressData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to save progress');
+        }
+        return response.json();
+    })
+    .then(data => {
+        showFeedback(isCorrect, question);
+        
+        // Show next button after successful submission
+        const submitBtn = document.getElementById('submit-btn');
+        const nextBtn = document.getElementById('next-btn');
+        
+        if (submitBtn) {
+            submitBtn.style.display = 'none';
+        }
+        
+        if (nextBtn) {
+            nextBtn.style.display = 'inline-block';
+        }
+    })
+    .catch(error => {
+        console.error('Error saving progress:', error);
+        alert('Failed to save your answer. Please try again.');
+    });
 }
 
-function showFeedback(question, isCorrect) {
+function showFeedback(isCorrect, question) {
     console.log("Showing feedback:", isCorrect ? "Correct" : "Incorrect");
     
-    const feedbackEl = document.createElement('div');
-    feedbackEl.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
-    
-    const header = document.createElement('h3');
-    header.textContent = isCorrect ? '✓ Correct!' : '✗ Incorrect';
-    
-    const explanation = document.createElement('p');
-    explanation.textContent = isCorrect ? 
-        question.feedback.correct : 
-        question.feedback.incorrect;
-    
-    feedbackEl.appendChild(header);
-    feedbackEl.appendChild(explanation);
-    
-    // Add visual examples if available
-    if (question.visualFeedback) {
-        const visualDiv = document.createElement('div');
-        visualDiv.className = 'visual-feedback';
-        visualDiv.innerHTML = question.visualFeedback;
-        feedbackEl.appendChild(visualDiv);
+    const feedbackDiv = document.getElementById('feedback');
+    if (feedbackDiv) {
+        feedbackDiv.style.display = 'block';
+        feedbackDiv.innerHTML = `
+            <div class="quiz-feedback ${isCorrect ? 'success' : 'error'}">
+                <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+                <p>${isCorrect ? question.feedback.correct : question.feedback.incorrect}</p>
+            </div>
+        `;
     }
-    
-    if (feedback) {
-        feedback.innerHTML = '';
-        feedback.appendChild(feedbackEl);
-        feedback.classList.remove('hidden');
-    }
-    
+
     // Hide submit button and show next button
-    const submitBtn = document.querySelector('button[type="submit"]');
+    const submitBtn = document.getElementById('submit-btn');
     const nextBtn = document.getElementById('next-btn');
     
-    if (submitBtn) submitBtn.classList.add('hidden');
-    if (nextBtn) nextBtn.classList.remove('hidden');
+    if (submitBtn) {
+        submitBtn.style.display = 'none';
+    }
+    
+    if (nextBtn) {
+        nextBtn.style.display = 'inline-block';
+    }
 }
 
 function nextQuestion() {
     if (feedback) feedback.classList.add('hidden');
     
-    if (currentQuestion < questions.length - 1) {
-        currentQuestion++;
-        showQuestion(currentQuestion);
+    if (currentQuestionId < questions.length) {
+        currentQuestionId++;
+        showQuestion(currentQuestionId - 1);
         
         // Reset UI state for the next question
         const submitBtn = document.querySelector('button[type="submit"], #submit-btn, .submit-answer');
@@ -630,9 +617,9 @@ function nextQuestion() {
 }
 
 function previousQuestion() {
-    if (currentQuestion > 0) {
-        currentQuestion--;
-        showQuestion(currentQuestion);
+    if (currentQuestionId > 1) {
+        currentQuestionId--;
+        showQuestion(currentQuestionId - 1);
     } else {
         if (quizQuestion) quizQuestion.classList.add('hidden');
         if (quizIntro) quizIntro.classList.remove('hidden');
@@ -874,8 +861,8 @@ function reviewMissedQuestions() {
     );
     
     if (missedIndex !== -1) {
-        currentQuestion = missedIndex;
-        showQuestion(currentQuestion);
+        currentQuestionId = missedIndex + 1;
+        showQuestion(currentQuestionId - 1);
     }
 }
 
@@ -906,23 +893,134 @@ function arraysEqual(a, b) {
     return a.every((val, index) => val === b[index]);
 }
 
-// Load saved progress on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const savedProgress = localStorage.getItem('quizProgress');
-    if (savedProgress) {
-        try {
-            const progress = JSON.parse(savedProgress);
-            currentQuestion = progress.currentIndex || 0;
-            userAnswers = progress.answers || {};
-            score = progress.score || 0;
-            
-            // If we're on the quiz page and not on the intro, show the current question
-            if (document.getElementById('quiz-question') && 
-                !document.getElementById('quiz-question').classList.contains('hidden')) {
-                showQuestion(currentQuestion);
+function setupEventListeners() {
+    // Submit button
+    const submitBtn = document.querySelector('#submit-btn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', handleSubmit);
+    }
+    
+    // Next button
+    const nextBtn = document.querySelector('#next-btn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const nextQuestionId = currentQuestionId + 1;
+            if (nextQuestionId <= questions.length) {
+                window.location.href = `/quiz/${nextQuestionId}`;
+            } else {
+                window.location.href = '/quiz/results';
             }
-        } catch (e) {
-            console.error("Error loading saved progress:", e);
+        });
+    }
+    
+    // Back button
+    const backBtn = document.querySelector('#back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            const prevQuestionId = currentQuestionId - 1;
+            if (prevQuestionId >= 1) {
+                window.location.href = `/quiz/${prevQuestionId}`;
+            }
+        });
+    }
+}
+
+function restoreSavedAnswers() {
+    const quizProgress = window.QUIZ_STATE && window.QUIZ_STATE.progress;
+    if (!quizProgress || !quizProgress.answers || !quizProgress.answers[currentQuestionId]) return;
+    
+    const savedAnswers = quizProgress.answers[currentQuestionId];
+    const questionType = document.querySelector('.quiz-content').getAttribute('data-question-type');
+    
+    switch (questionType) {
+        case 'identify':
+        case 'analysis':
+            if (Array.isArray(savedAnswers)) {
+                savedAnswers.forEach(answer => {
+                    const checkbox = document.querySelector(`input[value="${answer}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            break;
+            
+        case 'scenario':
+            if (typeof savedAnswers === 'string') {
+                const radio = document.querySelector(`input[value="${savedAnswers}"]`);
+                if (radio) radio.checked = true;
+            }
+            break;
+            
+        case 'match':
+            if (typeof savedAnswers === 'object') {
+                Object.entries(savedAnswers).forEach(([technique, emotion]) => {
+                    const techItem = document.querySelector(`[data-technique="${technique}"]`);
+                    const emoBox = document.querySelector(`[data-emotion="${emotion}"]`);
+                    if (techItem && emoBox) {
+                        emoBox.appendChild(techItem);
+                        emoBox.setAttribute('data-matched', technique);
+                    }
+                });
+            }
+            break;
+    }
+}
+
+async function handleSubmit(event) {
+    event.preventDefault();
+    console.log('Submit clicked');
+
+    // Get the form
+    const form = document.getElementById('question-form');
+    if (!form) return;
+
+    // Get selected answers
+    const answers = Array.from(form.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(input => input.value);
+
+    console.log('Selected answers:', answers);
+
+    // Save answers
+    try {
+        const response = await fetch('/save_progress', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                answers: {
+                    [currentQuestionId]: answers
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to save progress');
         }
-  }
-});
+
+        // Show feedback
+        const feedbackDiv = document.getElementById('feedback');
+        if (feedbackDiv) {
+            feedbackDiv.style.display = 'block';
+            feedbackDiv.innerHTML = `
+                <h3>✓ Answer Saved!</h3>
+                <p>Click Next to continue to the next question.</p>
+            `;
+        }
+
+        // Hide submit button
+        const submitButton = document.getElementById('submit-btn');
+        if (submitButton) {
+            submitButton.style.display = 'none';
+        }
+
+        // Show next button
+        const nextButton = document.getElementById('next-btn');
+        if (nextButton) {
+            nextButton.style.display = 'inline-block';
+        }
+
+    } catch (error) {
+        console.error('Error saving progress:', error);
+        alert('Failed to save your answer. Please try again.');
+    }
+}
