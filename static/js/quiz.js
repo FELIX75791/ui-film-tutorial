@@ -196,7 +196,36 @@ document.addEventListener('DOMContentLoaded', function() {
     if (submitBtn) {
         submitBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            submitAnswer();
+            
+            // Get selected answers based on question type
+            let answers;
+            const quizContent = document.querySelector('.quiz-content');
+            const questionType = quizContent.getAttribute('data-question-type');
+            
+            if (questionType === 'scenario') {
+                const selectedRadio = document.querySelector('input[type="radio"]:checked');
+                answers = selectedRadio ? selectedRadio.value : null;
+            } else if (questionType === 'identify') {
+                const selectedCheckboxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                    .map(cb => cb.value);
+                answers = selectedCheckboxes;
+            } else if (questionType === 'match') {
+                const matches = {};
+                document.querySelectorAll('.matching-pair').forEach(pair => {
+                    const tech = pair.querySelector('.technique').textContent;
+                    const emotion = pair.querySelector('select').value;
+                    if (emotion) {
+                        matches[tech] = emotion;
+                    }
+                });
+                answers = matches;
+            }
+            
+            // Save the answer
+            saveAnswer(answers);
+            
+            // Show feedback
+            showFeedback(answers);
         });
     }
     
@@ -1023,4 +1052,69 @@ async function handleSubmit(event) {
         console.error('Error saving progress:', error);
         alert('Failed to save your answer. Please try again.');
     }
+}
+
+function saveAnswer(answers) {
+    const currentQuestion = parseInt(window.location.pathname.split('/').pop());
+    
+    // Get existing progress
+    let progress = JSON.parse(localStorage.getItem('quiz_progress') || '{}');
+    
+    // Update progress
+    progress[currentQuestion] = answers;
+    
+    // Save to localStorage
+    localStorage.setItem('quiz_progress', JSON.stringify(progress));
+    
+    // Also save to server
+    fetch('/save_progress', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(progress)
+    });
+}
+
+function showFeedback(answers) {
+    if (!answers) {
+        feedbackDiv.querySelector('.feedback-text').textContent = 'Please select an answer';
+        feedbackDiv.style.display = 'block';
+        return;
+    }
+    
+    // Show feedback based on answer type
+    const questionType = document.querySelector('.quiz-content').getAttribute('data-question-type');
+    if (questionType === 'scenario') {
+        const isCorrect = answers === correctAnswer;
+        showResult(isCorrect);
+    } else if (questionType === 'identify') {
+        const isCorrect = arraysEqual(answers.sort(), correctAnswers.sort());
+        showResult(isCorrect);
+    } else if (questionType === 'match') {
+        const isCorrect = Object.keys(answers).every(tech => 
+            answers[tech] === correctMatches[tech]);
+        showResult(isCorrect);
+    }
+    
+    // Show next button
+    submitBtn.style.display = 'none';
+    nextBtn.style.display = 'block';
+}
+
+function showResult(isCorrect) {
+    const icon = feedbackDiv.querySelector('.result-icon');
+    const text = feedbackDiv.querySelector('.feedback-text');
+    
+    if (isCorrect) {
+        icon.textContent = '✓';
+        icon.className = 'result-icon correct';
+        text.textContent = 'Correct! Well done!';
+    } else {
+        icon.textContent = '✗';
+        icon.className = 'result-icon incorrect';
+        text.textContent = 'Not quite right. Here\'s the correct answer:';
+    }
+    
+    feedbackDiv.style.display = 'block';
 }

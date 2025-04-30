@@ -293,7 +293,7 @@
 
 <script type="text/javascript">
     // Initialize quiz state from template variables
-    var quizProgress = {{ quiz_progress|tojson|safe }};
+    var quizProgress = {{ quiz_progress|tojson|safe if quiz_progress else '{}' }};
     var currentQuestion = {{ current_question }};
     var totalQuestions = {{ total_questions }};
     
@@ -333,18 +333,24 @@
             {% if question.type in ['identify', 'analysis'] %}
                 <div class="options-grid">
                     {% for option in question.options %}
-                    <label class="option">
-                        <input type="checkbox" name="answer" value="{{ option }}">
-                        <span>{{ option }}</span>
+                    <label class="option-label">
+                        <input type="checkbox" 
+                               name="answer" 
+                               value="{{ option }}"
+                               {% if saved_answer and option in saved_answer %}checked{% endif %}>
+                        {{ option }}
                     </label>
                     {% endfor %}
                 </div>
             {% elif question.type == 'scenario' %}
-                <div class="options-grid">
+                <div class="scenario-options">
                     {% for option in question.options %}
-                    <label class="option">
-                        <input type="radio" name="answer" value="{{ option }}">
-                        <span>{{ option }}</span>
+                    <label class="scenario-option">
+                        <input type="radio" 
+                               name="answer" 
+                               value="{{ option }}"
+                               {% if saved_answer == option %}checked{% endif %}>
+                        {{ option }}
                     </label>
                     {% endfor %}
                 </div>
@@ -353,22 +359,18 @@
                     <div class="matching-column">
                         <h3>Techniques</h3>
                         <div id="tech-list">
-                            {% for technique in question.techniques %}
-                            <div class="technique-item" data-technique="{{ technique }}">
-                                {{ technique }}
-                            </div>
+                            {% for tech in question.techniques %}
+                            <div class="technique-item" data-technique="{{ tech }}">{{ tech }}</div>
                             {% endfor %}
                         </div>
                     </div>
                     <div class="matching-column">
                         <h3>Effects</h3>
-                        <div id="emo-list">
-                            {% for emotion in question.emotions %}
-                            <div class="emotion-box" data-emotion="{{ emotion }}">
-                                {{ emotion }}
-                            </div>
-                            {% endfor %}
+                        {% for emotion in question.emotions %}
+                        <div class="emotion-box" data-emotion="{{ emotion }}">
+                            <span class="placeholder">Drop technique here</span>
                         </div>
+                        {% endfor %}
                     </div>
                 </div>
             {% endif %}
@@ -386,16 +388,16 @@
                     <div class="center-buttons">
                         <button type="button" id="submit-btn" class="btn btn-primary">Submit Answer</button>
                         {% if current_question < total_questions %}
-                        <a href="/quiz/{{ current_question + 1 }}" id="next-btn" class="btn btn-secondary">Next Question</a>
+                        <a href="/quiz/{{ current_question + 1 }}" id="next-btn" class="btn btn-secondary" style="display: none;">Next Question</a>
                         {% else %}
-                        <a href="/quiz/results" id="next-btn" class="btn btn-secondary">Finish Quiz</a>
+                        <a href="/quiz/results" id="next-btn" class="btn btn-secondary" style="display: none;">Finish Quiz</a>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </form>
         
-        <div id="feedback" class="quiz-feedback">
+        <div id="feedback" class="quiz-feedback" style="display: none;">
             <h3></h3>
             <p></p>
         </div>
@@ -408,99 +410,127 @@
 </script>
 
 <script>
-$(document).ready(function() {
-    // Initialize drag and drop if we're on a matching question
-    if ($('.matching-container').length) {
-        initializeMatchingQuestion();
+document.addEventListener('DOMContentLoaded', function() {
+    const submitBtn = document.getElementById('submit-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const feedbackDiv = document.getElementById('feedback');
+    
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get selected answers based on question type
+            let answers;
+            const questionType = document.querySelector('.quiz-content').getAttribute('data-question-type');
+            
+            if (questionType === 'scenario') {
+                const selectedRadio = document.querySelector('input[type="radio"]:checked');
+                answers = selectedRadio ? selectedRadio.value : null;
+            } else if (questionType === 'identify' || questionType === 'analysis') {
+                answers = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                    .map(input => input.value);
+            } else if (questionType === 'match') {
+                answers = {};
+                document.querySelectorAll('.emotion-box').forEach(box => {
+                    const technique = box.querySelector('.technique-item')?.dataset.technique;
+                    if (technique) {
+                        answers[technique] = box.dataset.emotion;
+                    }
+                });
+            }
+            
+            // Get correct answers from the question data
+            const questionData = {{ question|tojson|safe }};
+            let isCorrect = false;
+            
+            if (questionType === 'scenario') {
+                isCorrect = answers === questionData.correct_answer;
+            } else if (questionType === 'match') {
+                isCorrect = JSON.stringify(answers) === JSON.stringify(questionData.correct_answers);
+            } else {
+                isCorrect = JSON.stringify(answers.sort()) === JSON.stringify(questionData.correct_answers.sort());
+            }
+            
+            // Save progress and show feedback
+            fetch('/save_progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    [currentQuestion]: answers
+                })
+            })
+            .then(response => response.json())
+            .then(() => {
+                // Show feedback
+                feedbackDiv.style.display = 'block';
+                feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
+                feedbackDiv.innerHTML = `
+                    <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+                    <p>${isCorrect ? 
+                        'Great job! You can proceed to the next question.' : 
+                        'Not quite right. ' + questionData.explanation}</p>
+                `;
+                
+                // Show next button
+                if (nextBtn) {
+                    nextBtn.style.display = 'inline-block';
+                }
+                
+                // Disable submit button
+                submitBtn.disabled = true;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to save your answer. Please try again.');
+            });
+        });
     }
 });
 
-function initializeMatchingQuestion() {
-    // Make technique items draggable
-    $('.technique-item').draggable({
-        revert: 'invalid',
-        helper: 'clone',
-        cursor: 'move',
-        start: function(event, ui) {
-            $(this).addClass('dragging');
-        },
-        stop: function(event, ui) {
-            $(this).removeClass('dragging');
-        }
-    });
-
-    // Make emotion boxes droppable
-    $('.emotion-box').droppable({
-        accept: '.technique-item',
-        hoverClass: 'ui-droppable-hover',
-        drop: function(event, ui) {
-            const $droppedItem = ui.draggable;
-            const $dropZone = $(this);
-            const $existingItem = $dropZone.find('.technique-item');
-
-            // If there's already an item in this box
-            if ($existingItem.length) {
-                // Move existing item back to tech list
-                $('#tech-list').append($existingItem);
+// Initialize drag and drop for matching questions
+if (document.querySelector('.matching-container')) {
+    $(document).ready(function() {
+        $('.technique-item').draggable({
+            revert: 'invalid',
+            helper: 'clone',
+            cursor: 'move',
+            start: function(event, ui) {
+                $(this).addClass('dragging');
+            },
+            stop: function(event, ui) {
+                $(this).removeClass('dragging');
             }
+        });
 
-            // Move dropped item to this box
-            $dropZone.empty().append($droppedItem);
-            $droppedItem.css({
-                top: 0,
-                left: 0,
-                position: 'relative'
-            });
-
-            checkAllMatched();
-        }
+        $('.emotion-box').droppable({
+            accept: '.technique-item',
+            hoverClass: 'ui-droppable-hover',
+            drop: function(event, ui) {
+                const $droppedItem = ui.draggable;
+                const $dropZone = $(this);
+                
+                // If there's already an item in this box, move it back
+                const $existingItem = $dropZone.find('.technique-item');
+                if ($existingItem.length) {
+                    $('#tech-list').append($existingItem);
+                }
+                
+                // Remove placeholder text
+                $dropZone.find('.placeholder').remove();
+                
+                // Move dropped item to this box
+                $dropZone.append($droppedItem);
+                $droppedItem.css({
+                    top: 0,
+                    left: 0,
+                    position: 'relative'
+                });
+            }
+        });
     });
 }
-
-function checkAllMatched() {
-    const allMatched = $('.emotion-box').toArray().every(box => $(box).find('.technique-item').length > 0);
-    $('#submit-btn').prop('disabled', !allMatched);
-}
-
-// Handle submit button click
-$('#submit-btn').click(function(e) {
-    e.preventDefault();
-    
-    const answers = {};
-    $('.emotion-box').each(function() {
-        const $box = $(this);
-        const $technique = $box.find('.technique-item');
-        if ($technique.length) {
-            answers[$technique.data('technique')] = $box.data('emotion');
-        }
-    });
-
-    // Save progress
-    $.ajax({
-        url: '/save_progress',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            answers: {
-                [{{ current_question }}]: answers
-            }
-        }),
-        success: function(data) {
-            // Show feedback
-            const $feedback = $('#feedback');
-            $feedback.html(`
-                <h3>${data.isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
-                <p>${data.feedback || 'Keep trying!'}</p>
-            `).show();
-            
-            // Enable next button
-            $('#next-btn').addClass('active');
-        },
-        error: function() {
-            alert('Failed to save your answer. Please try again.');
-        }
-    });
-});
 </script>
 
 <!-- Add this section after the quiz content to show correct answers -->
@@ -608,48 +638,53 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (questionType === 'match') {
                 answers = {};
                 document.querySelectorAll('.emotion-box').forEach(box => {
-                    const technique = box.querySelector('.technique-item')?.getAttribute('data-technique');
-                    const emotion = box.getAttribute('data-emotion');
-                    if (technique && emotion) {
-                        answers[technique] = emotion;
+                    const technique = box.querySelector('.technique-item')?.dataset.technique;
+                    if (technique) {
+                        answers[technique] = box.dataset.emotion;
                     }
                 });
             }
             
-            // Save progress
+            // Get correct answers from the question data
+            const questionData = {{ question|tojson|safe }};
+            let isCorrect = false;
+            
+            if (questionType === 'scenario') {
+                isCorrect = answers === questionData.correct_answer;
+            } else if (questionType === 'match') {
+                isCorrect = JSON.stringify(answers) === JSON.stringify(questionData.correct_answers);
+            } else {
+                isCorrect = JSON.stringify(answers.sort()) === JSON.stringify(questionData.correct_answers.sort());
+            }
+            
+            // Save progress and show feedback
             fetch('/save_progress', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    answers: {
-                        [currentQuestion]: answers
-                    }
+                    [currentQuestion]: answers
                 })
             })
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to save progress');
-                return response.json();
-            })
-            .then(data => {
-                // Show feedback with correct/incorrect status but without revealing answer
-                if (feedbackDiv) {
-                    feedbackDiv.style.display = 'block';
-                    feedbackDiv.innerHTML = `
-                        <h3>${data.isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
-                        <p>${data.isCorrect ? 'Well done! You can proceed to the next question.' : 'Not quite right. You can try again or proceed to the next question.'}</p>
-                    `;
-                    feedbackDiv.className = `quiz-feedback ${data.isCorrect ? 'success' : 'error'}`;
-                }
+            .then(response => response.json())
+            .then(() => {
+                // Show feedback
+                feedbackDiv.style.display = 'block';
+                feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
+                feedbackDiv.innerHTML = `
+                    <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+                    <p>${isCorrect ? 
+                        'Great job! You can proceed to the next question.' : 
+                        'Not quite right. ' + questionData.explanation}</p>
+                `;
                 
-                // Enable next button
+                // Show next button
                 if (nextBtn) {
-                    nextBtn.style.opacity = '1';
-                    nextBtn.style.pointerEvents = 'auto';
+                    nextBtn.style.display = 'inline-block';
                 }
                 
-                // Disable submit button after submission
+                // Disable submit button
                 submitBtn.disabled = true;
             })
             .catch(error => {

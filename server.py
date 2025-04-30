@@ -307,45 +307,49 @@ async def quiz_results(request: Request):
     }
     
     for q_id, question in QUIZ_DATA.items():
-        user_answer = quiz_progress.get(str(q_id))
+        q_id_str = str(q_id)
+        user_answer = quiz_progress.get(q_id_str)
         is_correct = False
         
-        if user_answer:
-            if question["type"] == "match":
-                is_correct = user_answer == question["correct_answers"]
-            elif question["type"] == "scenario":
-                is_correct = user_answer == question["correct_answer"]
-            else:
-                is_correct = set(user_answer) == set(question["correct_answers"])
+        # Determine category
+        category = {
+            "identify": "Identification",
+            "match": "Matching",
+            "analysis": "Analysis",
+            "scenario": "Scenario"
+        }[question["type"]]
         
-        # Update score
-        if is_correct:
-            score += 1
-        
-        # Update category stats
-        category = "Identification" if question["type"] == "identify" else \
-                  "Matching" if question["type"] == "match" else \
-                  "Analysis" if question["type"] == "analysis" else "Scenario"
+        # Update category total
         categories[category]["total"] += 1
-        if is_correct:
-            categories[category]["correct"] += 1
         
-        # Add question details with correct handling of answer types
-        correct_answer = question.get("correct_answers", question.get("correct_answer"))
+        if user_answer is not None:  # Only check if user provided an answer
+            if question["type"] == "scenario":
+                is_correct = user_answer == question["correct_answer"]
+            elif question["type"] == "match":
+                is_correct = user_answer == question["correct_answers"]
+            else:  # identify or analysis
+                is_correct = set(user_answer) == set(question["correct_answers"])
+            
+            # Update score if correct
+            if is_correct:
+                score += 1
+                categories[category]["correct"] += 1
+        
+        # Add question details
         questions.append({
             "number": q_id,
             "title": question["title"],
             "type": question["type"],
             "correct": is_correct,
-            "user_answer": user_answer,
-            "correct_answer": correct_answer,
+            "user_answer": "No answer provided" if user_answer is None else user_answer,
+            "correct_answer": question.get("correct_answers", question.get("correct_answer")),
             "explanation": question["explanation"]
         })
     
-    # Calculate category percentages
+    # Calculate category percentages and ensure all categories are included
     category_results = []
     for name, stats in categories.items():
-        if stats["total"] > 0:
+        if stats["total"] > 0:  # Only include categories that have questions
             percentage = round((stats["correct"] / stats["total"]) * 100)
             category_results.append({
                 "name": name,
@@ -359,7 +363,7 @@ async def quiz_results(request: Request):
         {
             "request": request,
             "score": score,
-            "total_questions": total_questions,
+            "total": total_questions,
             "questions": questions,
             "categories": category_results
         }
@@ -371,20 +375,34 @@ async def quiz_question(request: Request, question_id: int):
     session = request.state.session
     quiz_progress = session.get("quiz_progress", {})
     
-    # Validate question_id
-    if question_id < 1 or question_id > len(QUIZ_DATA):
+    # Get the question data
+    question = QUIZ_DATA.get(question_id)
+    if not question:
         raise HTTPException(status_code=404, detail="Question not found")
     
-    question = QUIZ_DATA[question_id]
+    # Get saved answer if it exists
+    saved_answer = quiz_progress.get(str(question_id))
+    
+    # Add correct answer reference
+    if question["type"] == "identify":
+        question["correct_answer_reference"] = {
+            "correct": question["correct_answers"],
+            "incorrect": [opt for opt in question["options"] if opt not in question["correct_answers"]]
+        }
+    elif question["type"] == "match":
+        question["correct_answer_reference"] = question["correct_answers"]
+    elif question["type"] == "scenario":
+        question["correct_answer_reference"] = question["correct_answer"]
     
     return templates.TemplateResponse(
         "quiz_question.html",
         {
             "request": request,
-            "current_question": question_id,
-            "total_questions": len(QUIZ_DATA),
             "question": question,
-            "quiz_progress": quiz_progress
+            "saved_answer": saved_answer,
+            "total_questions": len(QUIZ_DATA),
+            "current_question": question_id,
+            "quiz_progress": quiz_progress  # Ensure this is always a dict
         }
     )
 
@@ -393,11 +411,34 @@ async def quiz_question(request: Request, question_id: int):
 async def save_progress(request: Request):
     try:
         # Get the progress data from the request body
-        progress_data = await request.json()
+        data = await request.json()
         
-        # Store progress in session
-        request.state.session["quiz_progress"] = progress_data
-        return {"status": "success"}
+        # Get existing progress from session
+        session = request.state.session
+        quiz_progress = session.get("quiz_progress", {})
+        
+        # Update with new answer
+        quiz_progress.update(data)
+        
+        # Store updated progress in session
+        session["quiz_progress"] = quiz_progress
+        
+        # Get the question number and answer from the data
+        question_id = list(data.keys())[0]  # Get the first (and only) key
+        user_answer = data[question_id]
+        
+        # Get the correct answer from quiz data
+        question = QUIZ_DATA[int(question_id)]
+        is_correct = False
+        
+        if question["type"] == "scenario":
+            is_correct = user_answer == question["correct_answer"]
+        elif question["type"] == "match":
+            is_correct = user_answer == question["correct_answers"]
+        else:  # identify or analysis
+            is_correct = set(user_answer) == set(question["correct_answers"])
+        
+        return {"status": "success", "isCorrect": is_correct}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
