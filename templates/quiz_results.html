@@ -37,135 +37,114 @@
         color: #475569;
     }
     
-    .category-analysis {
-        margin: 2rem 0;
-        padding: 2rem;
-        background-color: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-    
     .category-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1.5rem;
-        margin-top: 1.5rem;
-    }
-    
-    .category-card {
-        background-color: #f8fafc;
-        padding: 1.5rem;
-        border-radius: 8px;
-        text-align: center;
-    }
-    
-    .category-score {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #4f46e5;
-    }
-    
-    .breakdown-list {
-        list-style-type: none;
-        padding: 0;
         margin: 2rem 0;
     }
     
-    .breakdown-item {
+    .category-card {
         background-color: #ffffff;
         padding: 1.5rem;
-        margin-bottom: 1rem;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        text-align: center;
     }
     
-    .breakdown-item.correct {
-        border-left: 4px solid #22c55e;
-    }
-    
-    .breakdown-item.incorrect {
-        border-left: 4px solid #ef4444;
-    }
-    
-    .item-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-    
-    .item-status {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        margin-right: 1rem;
-        color: white;
-    }
-    
-    .status-correct {
-        background-color: #22c55e;
-    }
-    
-    .status-incorrect {
-        background-color: #ef4444;
-    }
-    
-    .item-details {
-        flex: 1;
-    }
-    
-    .item-question {
+    .category-name {
         font-weight: 600;
         color: #1e293b;
         margin-bottom: 0.5rem;
     }
     
-    .item-answer {
-        color: #475569;
-        margin-bottom: 0.5rem;
+    .category-score {
+        font-size: 1.5rem;
+        color: #4f46e5;
+        margin-bottom: 0.25rem;
     }
     
-    .item-explanation {
-        background-color: #f8fafc;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-top: 1rem;
-        font-size: 0.95rem;
-        color: #334155;
+    .category-percent {
+        color: #64748b;
+        font-size: 0.9rem;
     }
     
-    .action-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-top: 2rem;
+    .question-list {
+        margin-top: 3rem;
     }
     
-    .btn {
-        display: inline-block;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        text-decoration: none;
-        transition: all 0.2s ease;
-    }
-    
-    .btn-primary {
-        background-color: #4f46e5;
-        color: white;
-    }
-    
-    .btn-secondary {
-        background-color: #f1f5f9;
-        color: #475569;
+    .question-item {
+        background-color: #ffffff;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
         border: 1px solid #e2e8f0;
     }
     
-    .btn:hover {
-        transform: translateY(-1px);
+    .question-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .question-number {
+        background-color: #f8fafc;
+        color: #475569;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        margin-right: 1rem;
+        font-weight: 500;
+    }
+    
+    .question-title {
+        font-weight: 600;
+        color: #1e293b;
+        flex: 1;
+    }
+    
+    .question-status {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    
+    .status-correct {
+        background-color: #f0fdf4;
+        color: #166534;
+    }
+    
+    .status-incorrect {
+        background-color: #fef2f2;
+        color: #991b1b;
+    }
+    
+    .answer-details {
+        background-color: #f8fafc;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+    
+    .answer-row {
+        margin-bottom: 0.5rem;
+    }
+    
+    .answer-label {
+        font-weight: 500;
+        color: #475569;
+        margin-bottom: 0.25rem;
+    }
+    
+    .answer-text {
+        color: #1e293b;
+    }
+    
+    .explanation {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+        color: #64748b;
+        font-style: italic;
     }
 </style>
 {% endblock %}
@@ -175,79 +154,75 @@
     <div class="results-header">
         <h1>Quiz Results</h1>
         <div class="score-display">
-            <div class="score-value">{{ score }} / {{ total_questions }}</div>
+            <div class="score-value">{{ score }} / {{ total }}</div>
             <div class="score-label">Correct Answers</div>
         </div>
     </div>
     
-    <div class="category-analysis">
-        <h2>Performance by Category</h2>
-        <div class="category-grid">
-            {% for category in categories %}
-            <div class="category-card">
-                <h3>{{ category.name }}</h3>
-                <div class="category-score">{{ category.correct }}/{{ category.total }}</div>
-                <div class="category-percentage">{{ category.percentage }}%</div>
-            </div>
-            {% endfor %}
+    <h2>Performance by Category</h2>
+    <div class="category-grid">
+        {% for category in categories %}
+        <div class="category-card">
+            <div class="category-name">{{ category.name }}</div>
+            <div class="category-score">{{ category.correct }}/{{ category.total }}</div>
+            <div class="category-percent">{{ category.percentage }}%</div>
         </div>
+        {% endfor %}
     </div>
     
-    <div class="breakdown">
+    <div class="question-list">
         <h2>Question Breakdown</h2>
-        <ul class="breakdown-list">
-            {% for question in questions %}
-            <li class="breakdown-item {{ 'correct' if question.correct else 'incorrect' }}">
-                <div class="item-header">
-                    <div class="item-status {{ 'status-correct' if question.correct else 'status-incorrect' }}">
-                        {{ '✓' if question.correct else '✗' }}
-                    </div>
-                    <div class="item-details">
-                        <div class="item-question">Question {{ question.number }}: {{ question.title }}</div>
-                        <div class="item-answer">
-                            <strong>Your Answer:</strong>
-                            {% if question.type == 'match' %}
-                                {% if question.user_answer %}
-                                    {% for tech, emotion in question.user_answer.items() %}
-                                        {{ tech }} → {{ emotion }}{% if not loop.last %}, {% endif %}
-                                    {% endfor %}
-                                {% else %}
-                                    No answer provided
-                                {% endif %}
+        {% for question in questions %}
+        <div class="question-item {% if question.correct %}correct{% else %}incorrect{% endif %}">
+            <div class="question-header">
+                <span class="question-number">Q{{ question.number }}</span>
+                <span class="question-title">{{ question.title }}</span>
+                <span class="question-status {% if question.correct %}status-correct{% else %}status-incorrect{% endif %}">
+                    {% if question.correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                </span>
+            </div>
+            <div class="answer-details">
+                <div class="answer-row">
+                    <div class="answer-label">Your Answer:</div>
+                    <div class="answer-text">
+                        {% if question.user_answer is string %}
+                            {{ question.user_answer }}
+                        {% else %}
+                            {% if question.user_answer is mapping %}
+                                {% for tech, effect in question.user_answer.items() %}
+                                    {{ tech }} → {{ effect }}<br>
+                                {% endfor %}
                             {% else %}
-                                {% if question.user_answer %}
-                                    {{ question.user_answer if question.type == 'scenario' else question.user_answer|join(', ') }}
-                                {% else %}
-                                    No answer provided
-                                {% endif %}
+                                {{ question.user_answer|join(", ") }}
                             {% endif %}
-                        </div>
-                        <div class="item-answer">
-                            <strong>Correct Answer:</strong>
-                            {% if question.type == 'match' %}
-                                {% if question.correct_answer %}
-                                    {% for tech, emotion in question.correct_answer.items() %}
-                                        {{ tech }} → {{ emotion }}{% if not loop.last %}, {% endif %}
-                                    {% endfor %}
-                                {% endif %}
-                            {% else %}
-                                {{ question.correct_answer if question.type == 'scenario' else question.correct_answer|join(', ') }}
-                            {% endif %}
-                        </div>
-                        {% if question.explanation %}
-                        <div class="item-explanation">
-                            <strong>Explanation:</strong> {{ question.explanation }}
-                        </div>
                         {% endif %}
                     </div>
                 </div>
-            </li>
-            {% endfor %}
-        </ul>
+                <div class="answer-row">
+                    <div class="answer-label">Correct Answer:</div>
+                    <div class="answer-text">
+                        {% if question.correct_answer is string %}
+                            {{ question.correct_answer }}
+                        {% else %}
+                            {% if question.correct_answer is mapping %}
+                                {% for tech, effect in question.correct_answer.items() %}
+                                    {{ tech }} → {{ effect }}<br>
+                                {% endfor %}
+                            {% else %}
+                                {{ question.correct_answer|join(", ") }}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="explanation">
+                    {{ question.explanation }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
     
-    <div class="action-buttons">
-        <a href="/overview" class="btn btn-secondary">Return to Overview</a>
+    <div style="text-align: center; margin-top: 2rem;">
         <a href="/quiz/1" class="btn btn-primary">Retake Quiz</a>
     </div>
 </div>
