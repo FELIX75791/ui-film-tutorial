@@ -391,15 +391,35 @@ async def quiz_question(request: Request, question_id: int):
 # Save Progress Endpoint
 @app.post("/save_progress")
 async def save_progress(request: Request):
-    try:
-        # Get the progress data from the request body
-        progress_data = await request.json()
-        
-        # Store progress in session
-        request.state.session["quiz_progress"] = progress_data
-        return {"status": "success"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    data = await request.json()
+    new_answers = data.get("answers") or {}
+
+    # Merge into session so progress is { "1": [...], "2": [...], ... }
+    session = request.state.session
+    prog = session.get("quiz_progress", {})
+    # ensure keys are strings
+    for qid_str, ans in new_answers.items():
+        prog[str(qid_str)] = ans
+    session["quiz_progress"] = prog
+
+    # If there’s at least one new answer, return its correctness flag;
+    # otherwise just acknowledge the save.
+    if new_answers:
+        # unpack the single question submission
+        qid_str, user_ans = next(iter(new_answers.items()))
+        qid = int(qid_str)
+        question = QUIZ_DATA[qid]
+
+        if question["type"] in ("identify", "analysis"):
+            is_correct = set(user_ans) == set(question["correct_answers"])
+        elif question["type"] == "match":
+            is_correct = user_ans == question["correct_answers"]
+        else:  # scenario
+            is_correct = user_ans == question["correct_answer"]
+
+        return {"status": "success", "isCorrect": is_correct}
+
+    return {"status": "success"}
 
 
 if __name__ == "__main__":

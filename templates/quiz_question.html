@@ -306,6 +306,41 @@
     });
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const saved = window.QUIZ_STATE.progress[currentQuestion];
+  if (!saved) return;
+
+  const type = document.querySelector('.quiz-content').dataset.questionType;
+  if (type === 'scenario') {
+    // single radio
+    const r = document.querySelector(`input[type="radio"][value="${saved}"]`);
+    if (r) r.checked = true;
+  }
+  else if (type === 'identify' || type === 'analysis') {
+    // multiple checkboxes
+    saved.forEach(val => {
+      const cb = document.querySelector(`input[type="checkbox"][value="${val}"]`);
+      if (cb) cb.checked = true;
+    });
+  }
+  else if (type === 'match') {
+    // drag-and-drop: move each technique into the saved emotion box
+    Object.entries(saved).forEach(([tech, emo]) => {
+      const item = document.querySelector(`.technique-item[data-technique="${tech}"]`);
+      const box  = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
+      if (item && box) {
+        box.appendChild(item);
+        item.style.position = 'relative';
+      }
+    });
+    // enable Submit if all are matched
+    if (typeof checkAllMatched === 'function') checkAllMatched();
+  }
+});
+</script>
+
+
 <script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
 
 <!-- Add jQuery UI for better drag and drop support -->
