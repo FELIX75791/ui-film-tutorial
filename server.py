@@ -266,7 +266,7 @@ QUIZ_DATA = {
         "type": "analysis",
         "title": "Film Scene Analysis",
         "question": "Watch the clip and identify which techniques are used at different points in the scene",
-        "image": "images/quiz/scene-analysis.jpg",
+        "image": "/static/video/complex.mp4", 
         "options": ["Dutch Angle", "Tracking Shot", "Low-Key Lighting", "Handheld Camera", "Rack Focus"],
         "correct_answers": ["Dutch Angle", "Tracking Shot", "Low-Key Lighting"],
         "explanation": "The scene features a Dutch angle at the start, followed by a tracking shot, with low-key lighting throughout."
@@ -276,7 +276,7 @@ QUIZ_DATA = {
         "type": "analysis",
         "title": "Advanced Scene Breakdown",
         "question": "Analyze this scene and identify the techniques used",
-        "image": "images/quiz/scene-breakdown.jpg",
+        "image": "/static/video/shining.mp4",
         "options": ["Steadicam Shot", "Symmetrical Framing", "Low Angle", "Dutch Angle", "Whip Pan"],
         "correct_answers": ["Steadicam Shot", "Symmetrical Framing", "Low Angle"],
         "explanation": "The scene features a steadicam shot, symmetrical framing, and low angles to create unease."

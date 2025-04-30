@@ -359,10 +359,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     <div class="quiz-content" data-question-type="{{ question.type }}">
         {% if question.image %}
-        <div class="question-media">
-            <img src="{{ url_for('static', filename=question.image.replace('images/quiz/', 'img/')) }}" alt="Quiz Question">
-        </div>
+            {% set filename = question.image.split('/')[-1] %}
+            <div class="question-media">
+              {% if filename.endswith('.mp4') %}
+                <video controls width="100%">
+                  <source src="{{ url_for('static', filename='video/' ~ filename) }}" type="video/mp4">
+                  Your browser does not support the video tag.
+                </video>
+              {% else %}
+                <img src="{{ url_for('static', filename='img/' ~ filename) }}" alt="Quiz Question">
+              {% endif %}
+            </div>
         {% endif %}
+
+
         
         <form id="question-form" class="quiz-form" onsubmit="return false;">
             {% if question.type in ['identify', 'analysis'] %}
