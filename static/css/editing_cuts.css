@@ -1,15 +1,18 @@
 /* -------- larger squares for the Cuts page -------- */
 
-.cuts-grid{
-  --card-size: 330px;            /* tweak once if you want even bigger */
+.cuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr) !important; /* enforce 2 per row */
+  gap: 2rem;
+  margin: 2rem auto;
+  max-width: 700px;
+  justify-content: center;
+}
 
-  display:grid;
-  gap:2rem;
-
-  /* ○ desktop: 2 columns max, so squares grow until 320 px or container edge */
-  grid-template-columns:repeat(auto-fill, minmax(var(--card-size), 1fr));
-
-  margin-top:2rem;
+.cuts-row {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
 }
 
 /* keep square shape */
