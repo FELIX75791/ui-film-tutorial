@@ -191,6 +191,7 @@ A web-based quiz application for learning about film techniques and cinematograp
 
 # May6 note
 If just download the .zip; could try run these to launch the website
+https://drive.google.com/file/d/1OwZvMRM6LYFBS9JchVHs-HgZylckpmej/view?usp=drive_link
 - pip install fastapi uvicorn
 - source venv/bin/activate && pip install fastapi uvicorn
 - ./venv/bin/pip install fastapi uvicorn
