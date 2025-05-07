@@ -27,9 +27,13 @@
     {{ nav_link(url_for('overview'),  'Overview',  'overview') }}
 
     <div class="dropdown">
-      <button class="dropbtn {{ 'active' if page=='tutorial' else '' }}">
+      <!-- <button class="dropbtn {{ 'active' if page=='tutorial' else '' }}">
         Tutorial <span class="caret">▾</span>
-      </button>
+      </button> -->
+      <a href="#" class="dropbtn {{ 'active' if page=='tutorial' else '' }}">
+        Tutorial <span class="caret">▾</span>
+      </a>
+      
       <div class="dropdown-content">
         <a href="/category/angle-movement">Angle &amp; Movement</a>
         <a href="/category/shot-composition">Shots &amp; Compositions</a>
