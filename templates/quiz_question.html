@@ -268,7 +268,7 @@
         border: 2px dashed #cbd5e1;
         transition: all 0.2s ease;
         display: flex;
-        align-items: center;
+        flex-direction: column;
         justify-content: center;
         color: #64748b;
     }
@@ -289,6 +289,24 @@
         width: 100%;
         margin-bottom: 0;
     }
+    
+    /* Style for the emotion labels */
+    .emotion-label {
+        background-color: #e0e7ff;
+        color: #4338ca;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-weight: 500;
+        margin-top: 0.5rem;
+        text-align: center;
+        font-size: 0.9rem;
+        border: 1px solid #c7d2fe;
+    }
+    
+    /* Adjust placeholder position */
+    .emotion-box .placeholder {
+        margin-bottom: 0.5rem;
+    }
 </style>
 
 <script type="text/javascript">
@@ -308,34 +326,180 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const saved = window.QUIZ_STATE.progress[currentQuestion];
-  if (!saved) return;
-
+  console.log("Restoring saved answers if any");
+  
+  // Get answers from server-provided data
+  const saved = {{ saved_answer|tojson|safe if saved_answer else 'null' }};
+  
+  if (!saved) {
+    console.log("No saved answer found");
+    return;
+  }
+  
+  console.log("Found saved answer:", saved);
+  
   const type = document.querySelector('.quiz-content').dataset.questionType;
   if (type === 'scenario') {
     // single radio
+    console.log("Restoring scenario answer:", saved);
     const r = document.querySelector(`input[type="radio"][value="${saved}"]`);
-    if (r) r.checked = true;
+    if (r) {
+      r.checked = true;
+      console.log("Restored radio selection:", saved);
+    }
   }
   else if (type === 'identify' || type === 'analysis') {
     // multiple checkboxes
-    saved.forEach(val => {
-      const cb = document.querySelector(`input[type="checkbox"][value="${val}"]`);
-      if (cb) cb.checked = true;
-    });
+    console.log("Restoring identify/analysis answers:", saved);
+    if (Array.isArray(saved)) {
+      saved.forEach(val => {
+        const cb = document.querySelector(`input[type="checkbox"][value="${val}"]`);
+        if (cb) {
+          cb.checked = true;
+          console.log("Restored checkbox:", val);
+        }
+      });
+    }
   }
   else if (type === 'match') {
     // drag-and-drop: move each technique into the saved emotion box
-    Object.entries(saved).forEach(([tech, emo]) => {
-      const item = document.querySelector(`.technique-item[data-technique="${tech}"]`);
-      const box  = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
-      if (item && box) {
-        box.appendChild(item);
-        item.style.position = 'relative';
+    console.log("Restoring match answers:", saved);
+    
+    // Clear existing items first to avoid duplicates
+    document.querySelectorAll('.emotion-box').forEach(box => {
+      // Remove any technique items
+      const existingItem = box.querySelector('.technique-item');
+      if (existingItem) {
+        existingItem.remove();
+      }
+      
+      // Ensure placeholder is visible in empty boxes, but don't remove emotion label
+      if (!box.querySelector('.placeholder')) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'placeholder';
+        placeholder.textContent = 'Drop technique here';
+        
+        // Insert before the emotion label if it exists
+        const emotionLabel = box.querySelector('.emotion-label');
+        if (emotionLabel) {
+          box.insertBefore(placeholder, emotionLabel);
+        } else {
+          box.appendChild(placeholder);
+        }
       }
     });
-    // enable Submit if all are matched
-    if (typeof checkAllMatched === 'function') checkAllMatched();
+    
+    // Now apply the saved matches
+    if (saved && typeof saved === 'object') {
+      Object.entries(saved).forEach(([tech, emo]) => {
+        console.log(`Placing ${tech} in ${emo}`);
+        
+        const item = document.querySelector(`#tech-list .technique-item[data-technique="${tech}"], .technique-item[data-technique="${tech}"]`);
+        const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
+        
+        if (item && box) {
+          // Remove placeholder if present
+          const placeholder = box.querySelector('.placeholder');
+          if (placeholder) {
+            placeholder.remove();
+          }
+          
+          // Move item to box, before the emotion label
+          const emotionLabel = box.querySelector('.emotion-label');
+          if (emotionLabel) {
+            box.insertBefore(item, emotionLabel);
+          } else {
+            box.appendChild(item);
+          }
+          
+          item.style.position = 'relative';
+          console.log(`Restored match: ${tech} → ${emo}`);
+        }
+      });
+      
+      // Re-initialize drag and drop for any remaining items
+      if (typeof $ !== 'undefined') {
+        console.log("Re-initializing drag and drop");
+        $('.technique-item').draggable({
+          revert: 'invalid',
+          helper: 'clone',
+          cursor: 'move'
+        });
+      }
+    }
+  }
+  
+  // Check if this question was already answered and show feedback
+  if (saved) {
+    // Get submission status from the server
+    const wasSubmitted = {{ "true" if session.get("quiz_submitted", {}).get(current_question|string, False) else "false" }};
+    
+    // Only show feedback if the answer was actually submitted, not just auto-saved
+    if (wasSubmitted) {
+      // Get question data
+      const questionData = {{ question|tojson|safe }};
+      let isCorrect = false;
+      
+      // Determine if answer was correct
+      if (type === 'scenario') {
+        isCorrect = saved === questionData.correct_answer;
+      } else if (type === 'match' && typeof saved === 'object') {
+        const userKeys = Object.keys(saved);
+        const correctKeys = Object.keys(questionData.correct_answers);
+        isCorrect = (
+            userKeys.length === correctKeys.length &&
+            userKeys.every(key => saved[key] === questionData.correct_answers[key])
+        );
+      } else if ((type === 'identify' || type === 'analysis') && Array.isArray(saved)) {
+        // Sort both arrays for comparison
+        const sortedUserAnswers = [...saved].sort();
+        const sortedCorrectAnswers = [...questionData.correct_answers].sort();
+        isCorrect = arraysEqual(sortedUserAnswers, sortedCorrectAnswers);
+      }
+      
+      // Show feedback
+      const feedbackDiv = document.getElementById('feedback');
+      const submitBtn = document.getElementById('submit-btn');
+      const nextBtn = document.getElementById('next-btn');
+      
+      if (feedbackDiv && submitBtn && nextBtn) {
+        // Display feedback
+        feedbackDiv.style.display = 'block';
+        feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
+        feedbackDiv.innerHTML = `
+          <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+          <p>${isCorrect ? 
+              'Great job! You can proceed to the next question.' : 
+              'Not quite right. ' + questionData.explanation}</p>
+        `;
+        
+        // Add help text
+        const currentQ = {{ current_question }};
+        const answer = quizAnswers[currentQ];
+        if (answer) {
+          const helpText = document.createElement('div');
+          helpText.className = 'help-text';
+          helpText.innerHTML = `
+            <strong>Correct Answer:</strong><br>
+            ${Array.isArray(answer.correct) ? 
+                answer.correct.join(', ') : 
+                (typeof answer.correct === 'object' ? 
+                    Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
+                    answer.correct)
+            }<br><br>
+            <strong>Explanation:</strong><br>
+            ${answer.explanation}
+          `;
+          feedbackDiv.appendChild(helpText);
+        }
+        
+        // Update button states
+        submitBtn.disabled = true;
+        nextBtn.style.display = 'inline-block';
+      }
+    } else {
+      console.log("Answer was auto-saved but not submitted yet");
+    }
   }
 });
 </script>
@@ -411,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         {% for emotion in question.emotions %}
                         <div class="emotion-box" data-emotion="{{ emotion }}">
                             <span class="placeholder">Drop technique here</span>
+                            <div class="emotion-label">{{ emotion }}</div>
                         </div>
                         {% endfor %}
                     </div>
@@ -429,6 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <div class="center-buttons">
                         <button type="button" id="submit-btn" class="btn btn-primary">Submit Answer</button>
+                        <button type="button" id="reset-btn" class="btn btn-secondary" style="margin-left: 10px;">Reset Answer</button>
                         {% if current_question < total_questions %}
                         <a href="/quiz/{{ current_question + 1 }}" id="next-btn" class="btn btn-secondary" style="display: none;">Next Question</a>
                         {% else %}
@@ -452,10 +618,168 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
+// Define arraysEqual function that's used in the submit handler
+function arraysEqual(a, b) {
+    if (!Array.isArray(a) || !Array.isArray(b)) return false;
+    if (a.length !== b.length) return false;
+    
+    // Sort arrays to ensure consistent comparison
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    
+    return sortedA.every((val, index) => val === sortedB[index]);
+}
+
+// Function to save answers in real-time without waiting for submit
+function saveCurrentSelections() {
+    // Get selected answers based on question type
+    let answers;
+    const questionType = document.querySelector('.quiz-content').dataset.questionType;
+    
+    if (questionType === 'scenario') {
+        const selectedRadio = document.querySelector('input[type="radio"]:checked');
+        answers = selectedRadio ? selectedRadio.value : null;
+    } else if (questionType === 'identify' || questionType === 'analysis') {
+        answers = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(input => input.value);
+    } else if (questionType === 'match') {
+        answers = {};
+        document.querySelectorAll('.emotion-box').forEach(box => {
+            const technique = box.querySelector('.technique-item')?.dataset.technique;
+            if (technique) {
+                answers[technique] = box.dataset.emotion;
+            }
+        });
+    }
+    
+    // Only save if we have selections
+    if ((Array.isArray(answers) && answers.length > 0) || 
+        (typeof answers === 'object' && Object.keys(answers).length > 0) ||
+        (typeof answers === 'string')) {
+        
+        console.log("Auto-saving current selections:", answers);
+        
+        // Save progress to session with a flag indicating it's only a draft (not submitted)
+        fetch('/save_progress', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                answers: {
+                    [currentQuestion]: answers
+                },
+                submitted: false  // Add submitted flag = false
+            })
+        }).catch(error => {
+            console.error('Error auto-saving selections:', error);
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submit-btn');
     const nextBtn = document.getElementById('next-btn');
+    const resetBtn = document.getElementById('reset-btn');
     const feedbackDiv = document.getElementById('feedback');
+    
+    // Add event listeners to automatically save when users make selections
+    
+    // For checkbox questions (identify/analysis)
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', saveCurrentSelections);
+    });
+    
+    // For radio button questions (scenario)
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', saveCurrentSelections);
+    });
+    
+    // For matching questions - save after drag and drop
+    if (typeof $ !== 'undefined') {
+        $('.emotion-box').on('drop', function(event, ui) {
+            // Allow a brief delay for the DOM to update after drop
+            setTimeout(saveCurrentSelections, 100);
+        });
+    }
+    
+    // Reset button functionality
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            // Reset checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // Reset radio buttons
+            document.querySelectorAll('input[type="radio"]').forEach(rb => {
+                rb.checked = false;
+            });
+            
+            // Reset matching elements
+            const type = document.querySelector('.quiz-content').dataset.questionType;
+            if (type === 'match') {
+                // Move all technique items back to the tech-list
+                const techList = document.getElementById('tech-list');
+                document.querySelectorAll('.technique-item').forEach(item => {
+                    techList.appendChild(item);
+                    item.style.position = '';
+                });
+                
+                // Restore placeholders
+                document.querySelectorAll('.emotion-box').forEach(box => {
+                    if (!box.querySelector('.placeholder')) {
+                        const placeholder = document.createElement('span');
+                        placeholder.className = 'placeholder';
+                        placeholder.textContent = 'Drop technique here';
+                        box.appendChild(placeholder);
+                    }
+                });
+                
+                // Reinitialize drag and drop
+                if (typeof $ !== 'undefined') {
+                    $('.technique-item').draggable({
+                        revert: 'invalid',
+                        helper: 'clone',
+                        cursor: 'move',
+                        stop: function(event, ui) {
+                            // Auto-save after drag
+                            setTimeout(saveCurrentSelections, 100);
+                        }
+                    });
+                }
+            }
+            
+            // Reset feedback
+            if (feedbackDiv) {
+                feedbackDiv.style.display = 'none';
+                feedbackDiv.innerHTML = '';
+            }
+            
+            // Enable submit button
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
+            
+            // Hide next button
+            if (nextBtn) {
+                nextBtn.style.display = 'none';
+            }
+            
+            // Clear answer from server
+            fetch('/save_progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    answers: {
+                        [currentQuestion]: null
+                    }
+                })
+            });
+        });
+    }
     
     if (submitBtn) {
         submitBtn.addEventListener('click', function(e) {
@@ -488,9 +812,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (questionType === 'scenario') {
                 isCorrect = answers === questionData.correct_answer;
             } else if (questionType === 'match') {
-                isCorrect = JSON.stringify(answers) === JSON.stringify(questionData.correct_answers);
-            } else {
-                isCorrect = JSON.stringify(answers.sort()) === JSON.stringify(questionData.correct_answers.sort());
+                // Compare dictionaries by their contents
+                const userKeys = Object.keys(answers);
+                const correctKeys = Object.keys(questionData.correct_answers);
+                isCorrect = (
+                    userKeys.length === correctKeys.length &&
+                    userKeys.every(key => 
+                        answers[key] === questionData.correct_answers[key]
+                    )
+                );
+            } else if (questionType === 'identify' || questionType === 'analysis') {
+                isCorrect = arraysEqual(answers.sort(), questionData.correct_answers.sort());
             }
             
             // Save progress and show feedback
@@ -500,7 +832,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    [currentQuestion]: answers
+                    answers: {
+                        [currentQuestion]: answers
+                    },
+                    submitted: true  // Set submitted flag to true on submit
                 })
             })
             .then(response => response.json())
@@ -543,6 +878,8 @@ if (document.querySelector('.matching-container')) {
             },
             stop: function(event, ui) {
                 $(this).removeClass('dragging');
+                // Auto-save after drag operation completed
+                setTimeout(saveCurrentSelections, 100);
             }
         });
 
@@ -559,16 +896,25 @@ if (document.querySelector('.matching-container')) {
                     $('#tech-list').append($existingItem);
                 }
                 
-                // Remove placeholder text
+                // Remove placeholder text only, keep the emotion label
                 $dropZone.find('.placeholder').remove();
                 
-                // Move dropped item to this box
-                $dropZone.append($droppedItem);
+                // Move dropped item to this box, before the emotion label
+                const $emotionLabel = $dropZone.find('.emotion-label');
+                if ($emotionLabel.length) {
+                    $droppedItem.insertBefore($emotionLabel);
+                } else {
+                    $dropZone.append($droppedItem);
+                }
+                
                 $droppedItem.css({
                     top: 0,
                     left: 0,
                     position: 'relative'
                 });
+                
+                // Auto-save after drop
+                setTimeout(saveCurrentSelections, 100);
             }
         });
     });
@@ -694,9 +1040,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (questionType === 'scenario') {
                 isCorrect = answers === questionData.correct_answer;
             } else if (questionType === 'match') {
-                isCorrect = JSON.stringify(answers) === JSON.stringify(questionData.correct_answers);
-            } else {
-                isCorrect = JSON.stringify(answers.sort()) === JSON.stringify(questionData.correct_answers.sort());
+                // Compare dictionaries by their contents
+                const userKeys = Object.keys(answers);
+                const correctKeys = Object.keys(questionData.correct_answers);
+                isCorrect = (
+                    userKeys.length === correctKeys.length &&
+                    userKeys.every(key => 
+                        answers[key] === questionData.correct_answers[key]
+                    )
+                );
+            } else if (questionType === 'identify' || questionType === 'analysis') {
+                isCorrect = arraysEqual(answers.sort(), questionData.correct_answers.sort());
             }
             
             // Save progress and show feedback
@@ -706,7 +1060,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    [currentQuestion]: answers
+                    answers: {
+                        [currentQuestion]: answers
+                    },
+                    submitted: true  // Set submitted flag to true on submit
                 })
             })
             .then(response => response.json())
@@ -735,6 +1092,187 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+});
+</script>
+
+<!-- Check if this question was already answered and show feedback -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("Restoring saved answers if any");
+  
+  // Get answers from server-provided data
+  const saved = {{ saved_answer|tojson|safe if saved_answer else 'null' }};
+  
+  if (!saved) {
+    console.log("No saved answer found");
+    return;
+  }
+  
+  console.log("Found saved answer:", saved);
+  
+  const type = document.querySelector('.quiz-content').dataset.questionType;
+  if (type === 'scenario') {
+    // single radio
+    console.log("Restoring scenario answer:", saved);
+    const r = document.querySelector(`input[type="radio"][value="${saved}"]`);
+    if (r) {
+      r.checked = true;
+      console.log("Restored radio selection:", saved);
+    }
+  }
+  else if (type === 'identify' || type === 'analysis') {
+    // multiple checkboxes
+    console.log("Restoring identify/analysis answers:", saved);
+    if (Array.isArray(saved)) {
+      saved.forEach(val => {
+        const cb = document.querySelector(`input[type="checkbox"][value="${val}"]`);
+        if (cb) {
+          cb.checked = true;
+          console.log("Restored checkbox:", val);
+        }
+      });
+    }
+  }
+  else if (type === 'match') {
+    // drag-and-drop: move each technique into the saved emotion box
+    console.log("Restoring match answers:", saved);
+    
+    // Clear existing items first to avoid duplicates
+    document.querySelectorAll('.emotion-box').forEach(box => {
+      // Remove any technique items
+      const existingItem = box.querySelector('.technique-item');
+      if (existingItem) {
+        existingItem.remove();
+      }
+      
+      // Ensure placeholder is visible in empty boxes, but don't remove emotion label
+      if (!box.querySelector('.placeholder')) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'placeholder';
+        placeholder.textContent = 'Drop technique here';
+        
+        // Insert before the emotion label if it exists
+        const emotionLabel = box.querySelector('.emotion-label');
+        if (emotionLabel) {
+          box.insertBefore(placeholder, emotionLabel);
+        } else {
+          box.appendChild(placeholder);
+        }
+      }
+    });
+    
+    // Now apply the saved matches
+    if (saved && typeof saved === 'object') {
+      Object.entries(saved).forEach(([tech, emo]) => {
+        console.log(`Placing ${tech} in ${emo}`);
+        
+        const item = document.querySelector(`#tech-list .technique-item[data-technique="${tech}"], .technique-item[data-technique="${tech}"]`);
+        const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
+        
+        if (item && box) {
+          // Remove placeholder if present
+          const placeholder = box.querySelector('.placeholder');
+          if (placeholder) {
+            placeholder.remove();
+          }
+          
+          // Move item to box, before the emotion label
+          const emotionLabel = box.querySelector('.emotion-label');
+          if (emotionLabel) {
+            box.insertBefore(item, emotionLabel);
+          } else {
+            box.appendChild(item);
+          }
+          
+          item.style.position = 'relative';
+          console.log(`Restored match: ${tech} → ${emo}`);
+        }
+      });
+      
+      // Re-initialize drag and drop for any remaining items
+      if (typeof $ !== 'undefined') {
+        console.log("Re-initializing drag and drop");
+        $('.technique-item').draggable({
+          revert: 'invalid',
+          helper: 'clone',
+          cursor: 'move'
+        });
+      }
+    }
+  }
+  
+  // Check if this question was already answered and show feedback
+  if (saved) {
+    // Get submission status from the server
+    const wasSubmitted = {{ "true" if session.get("quiz_submitted", {}).get(current_question|string, False) else "false" }};
+    
+    // Only show feedback if the answer was actually submitted, not just auto-saved
+    if (wasSubmitted) {
+      // Get question data
+      const questionData = {{ question|tojson|safe }};
+      let isCorrect = false;
+      
+      // Determine if answer was correct
+      if (type === 'scenario') {
+        isCorrect = saved === questionData.correct_answer;
+      } else if (type === 'match' && typeof saved === 'object') {
+        const userKeys = Object.keys(saved);
+        const correctKeys = Object.keys(questionData.correct_answers);
+        isCorrect = (
+            userKeys.length === correctKeys.length &&
+            userKeys.every(key => saved[key] === questionData.correct_answers[key])
+        );
+      } else if ((type === 'identify' || type === 'analysis') && Array.isArray(saved)) {
+        // Sort both arrays for comparison
+        const sortedUserAnswers = [...saved].sort();
+        const sortedCorrectAnswers = [...questionData.correct_answers].sort();
+        isCorrect = arraysEqual(sortedUserAnswers, sortedCorrectAnswers);
+      }
+      
+      // Show feedback
+      const feedbackDiv = document.getElementById('feedback');
+      const submitBtn = document.getElementById('submit-btn');
+      const nextBtn = document.getElementById('next-btn');
+      
+      if (feedbackDiv && submitBtn && nextBtn) {
+        // Display feedback
+        feedbackDiv.style.display = 'block';
+        feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
+        feedbackDiv.innerHTML = `
+          <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+          <p>${isCorrect ? 
+              'Great job! You can proceed to the next question.' : 
+              'Not quite right. ' + questionData.explanation}</p>
+        `;
+        
+        // Add help text
+        const currentQ = {{ current_question }};
+        const answer = quizAnswers[currentQ];
+        if (answer) {
+          const helpText = document.createElement('div');
+          helpText.className = 'help-text';
+          helpText.innerHTML = `
+            <strong>Correct Answer:</strong><br>
+            ${Array.isArray(answer.correct) ? 
+                answer.correct.join(', ') : 
+                (typeof answer.correct === 'object' ? 
+                    Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
+                    answer.correct)
+            }<br><br>
+            <strong>Explanation:</strong><br>
+            ${answer.explanation}
+          `;
+          feedbackDiv.appendChild(helpText);
+        }
+        
+        // Update button states
+        submitBtn.disabled = true;
+        nextBtn.style.display = 'inline-block';
+      }
+    } else {
+      console.log("Answer was auto-saved but not submitted yet");
+    }
+  }
 });
 </script>
 {% endblock %}
