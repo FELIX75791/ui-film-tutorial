@@ -1,9 +1,5 @@
 # ui-film-tutorial
-# YouTuBe Video DEMO: 
-[v2-may6] https://youtu.be/4ngeZgsfGc0
-
-https://youtu.be/I0wPwVxinI4
-
+# YouTuBe Video DEMO: https://youtu.be/I0wPwVxinI4
 Team Members: Ziyue Jin, Ken Deng, Linlin Zhang, Cheng Yang
 
 TA: Phoebe Wang
@@ -195,7 +191,6 @@ A web-based quiz application for learning about film techniques and cinematograp
 
 # May6 note
 If just download the .zip; could try run these to launch the website
-https://drive.google.com/file/d/1OwZvMRM6LYFBS9JchVHs-HgZylckpmej/view?usp=drive_link
 - pip install fastapi uvicorn
 - source venv/bin/activate && pip install fastapi uvicorn
 - ./venv/bin/pip install fastapi uvicorn
