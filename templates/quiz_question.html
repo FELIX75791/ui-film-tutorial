@@ -362,6 +362,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="question-media">
             <img src="{{ url_for('static', filename=question.image) }}" alt="Quiz Question">
         </div>
+        {% elif question.media and question.media.type == 'video' %}
+        <div class="question-media">
+            <video controls style="max-width:100%; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <source src="{{ question.media.src }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
         {% endif %}
         
         <form id="question-form" class="quiz-form" onsubmit="return false;">

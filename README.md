@@ -148,3 +148,52 @@ PS. **`/static/video/shining.mp4` - Used for Question 8 (Advanced Scene Breakdow
      - Consider a scene from a film known for its visual storytelling, like "The Shining" (which the filename suggests) or "2001: A Space Odyssey."
 Temp Source: https://www.youtube.com/watch?v=F2lU8PnA24A
 
+# UI Film Tutorial Quiz
+
+A web-based quiz application for learning about film techniques and cinematography.
+
+## Setup
+
+1. Make sure you have Python 3.8+ installed on your system.
+
+2. Create and activate a virtual environment (recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+   ```
+
+3. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Running the Application
+
+1. Make sure your virtual environment is activated.
+
+2. Start the server:
+   ```bash
+   python server.py
+   ```
+
+3. Open your web browser and navigate to:
+   ```
+   http://127.0.0.1:8000/quiz
+   ```
+
+## Project Structure
+
+- `server.py` - Main FastAPI server application
+- `templates/` - HTML templates
+- `static/` - Static files (CSS, JavaScript, images)
+- `requirements.txt` - Python package dependencies
+
+
+# May6 note
+If just download the .zip; could try run these to launch the website
+- pip install fastapi uvicorn
+- source venv/bin/activate && pip install fastapi uvicorn
+- ./venv/bin/pip install fastapi uvicorn
+- rm -rf venv && python3 -m venv venv && source venv/bin/activate && pip install fastapi uvicorn
+- pip install jinja2
+- python server.py

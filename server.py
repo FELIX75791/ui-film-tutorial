@@ -198,7 +198,7 @@ QUIZ_DATA = {
         "type": "identify",
         "title": "Identify Cinematography Techniques",
         "question": "Watch the clip and identify which cinematography techniques are being used (select all that apply)",
-        "image": "images/quiz/dutch-angle.jpg",
+        "image": "img/quiz/dutch-angle.jpg",
         "options": ["Dutch Angle", "Low-Key Lighting", "Tracking Shot", "Depth of Field"],
         "correct_answers": ["Dutch Angle", "Low-Key Lighting"],
         "explanation": "This scene uses Dutch Angle to create disorientation and Low-Key Lighting to build atmosphere."
@@ -208,7 +208,7 @@ QUIZ_DATA = {
         "type": "identify",
         "title": "Horror Film Techniques",
         "question": "Identify which cinematography techniques are used in this horror scene",
-        "image": "images/quiz/horror-scene.jpg",
+        "image": "img/quiz/horror-scene.jpg",
         "options": ["Handheld Camera", "High-Key Lighting", "Extreme Close-Up", "Slow Motion"],
         "correct_answers": ["Handheld Camera", "Extreme Close-Up"],
         "explanation": "Horror films typically use unstable camera work (handheld) and intimate shots (extreme close-ups) to create anxiety."
@@ -266,7 +266,7 @@ QUIZ_DATA = {
         "type": "analysis",
         "title": "Film Scene Analysis",
         "question": "Watch the clip and identify which techniques are used at different points in the scene",
-        "image": "images/quiz/scene-analysis.jpg",
+        "media": {"type": "video", "src": "/static/video/complex.mp4"},
         "options": ["Dutch Angle", "Tracking Shot", "Low-Key Lighting", "Handheld Camera", "Rack Focus"],
         "correct_answers": ["Dutch Angle", "Tracking Shot", "Low-Key Lighting"],
         "explanation": "The scene features a Dutch angle at the start, followed by a tracking shot, with low-key lighting throughout."
@@ -276,7 +276,7 @@ QUIZ_DATA = {
         "type": "analysis",
         "title": "Advanced Scene Breakdown",
         "question": "Analyze this scene and identify the techniques used",
-        "image": "images/quiz/scene-breakdown.jpg",
+        "media": {"type": "video", "src": "/static/video/shining.mp4"},
         "options": ["Steadicam Shot", "Symmetrical Framing", "Low Angle", "Dutch Angle", "Whip Pan"],
         "correct_answers": ["Steadicam Shot", "Symmetrical Framing", "Low Angle"],
         "explanation": "The scene features a steadicam shot, symmetrical framing, and low angles to create unease."
@@ -420,7 +420,7 @@ async def save_progress(request: Request):
         prog[str(qid_str)] = ans
     session["quiz_progress"] = prog
 
-    # If there’s at least one new answer, return its correctness flag;
+    # If there's at least one new answer, return its correctness flag;
     # otherwise just acknowledge the save.
     if new_answers:
         # unpack the single question submission
