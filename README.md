@@ -1,5 +1,7 @@
 # ui-film-tutorial
-# YouTuBe Video DEMO: https://youtu.be/I0wPwVxinI4
+# YouTuBe Video DEMO: 
+[v2-may6] https://youtu.be/4ngeZgsfGc0
+https://youtu.be/I0wPwVxinI4
 Team Members: Ziyue Jin, Ken Deng, Linlin Zhang, Cheng Yang
 
 TA: Phoebe Wang
