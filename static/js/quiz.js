@@ -542,19 +542,21 @@ function submitAnswer() {
         case 'match':
             userAnswer = {};
             document.querySelectorAll('.emotion-box').forEach(box => {
-                const technique = box.getAttribute('data-matched');
-                const emotion = box.getAttribute('data-emotion');
+                const technique = box.querySelector('.technique-item')?.dataset.technique;
                 if (technique) {
-                    userAnswer[technique] = emotion;
+                    userAnswer[technique] = box.dataset.emotion;
                 }
             });
             
-            const allMatched = question.techniques.every(tech => userAnswer[tech] !== undefined);
-            const allCorrect = Object.entries(userAnswer).every(([tech, emotion]) => 
-                question.correctMatches[tech] === emotion
+            // Compare dictionaries by their contents
+            const userKeys = Object.keys(userAnswer);
+            const correctKeys = Object.keys(question.correctMatches);
+            isCorrect = (
+                userKeys.length === correctKeys.length &&
+                userKeys.every(key => 
+                    userAnswer[key] === question.correctMatches[key]
+                )
             );
-            
-            isCorrect = allMatched && allCorrect;
             break;
     }
     
@@ -1057,22 +1059,17 @@ async function handleSubmit(event) {
 function saveAnswer(answers) {
     const currentQuestion = parseInt(window.location.pathname.split('/').pop());
     
-    // Get existing progress
-    let progress = JSON.parse(localStorage.getItem('quiz_progress') || '{}');
-    
-    // Update progress
-    progress[currentQuestion] = answers;
-    
-    // Save to localStorage
-    localStorage.setItem('quiz_progress', JSON.stringify(progress));
-    
-    // Also save to server
+    // Always send as { answers: { [questionId]: answers } }
     fetch('/save_progress', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(progress)
+        body: JSON.stringify({
+            answers: {
+                [currentQuestion]: answers
+            }
+        })
     });
 }
 
