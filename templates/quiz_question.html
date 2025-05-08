@@ -392,30 +392,47 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
-    // Now restore saved matches
-    Object.entries(saved).forEach(([tech, emo]) => {
-      const item = document.querySelector(`.technique-item[data-technique="${tech}"]`);
-      const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
-      
-      if (item && box) {
-        // Remove placeholder if present
-        const placeholder = box.querySelector('.placeholder');
-        if (placeholder) {
-          placeholder.remove();
-        }
-        
-        // Move item to box, before the emotion label
-        const emotionLabel = box.querySelector('.emotion-label');
-        if (emotionLabel) {
-          box.insertBefore(item, emotionLabel);
-        } else {
-          box.appendChild(item);
-        }
-        
-        item.style.position = 'relative';
-        console.log(`Restored match: ${tech} → ${emo}`);
+    // First, make sure all technique items are in the tech-list
+    const techList = document.getElementById('tech-list');
+    document.querySelectorAll('.technique-item').forEach(item => {
+      // If not already in the tech-list, move it there
+      const parent = item.parentElement;
+      if (parent && parent.id !== 'tech-list') {
+        techList.appendChild(item);
       }
     });
+    
+    // Now restore saved matches
+    if (saved && typeof saved === 'object') {
+      Object.entries(saved).forEach(([tech, emo]) => {
+        // Find the technique item in the DOM
+        const item = document.querySelector(`.technique-item[data-technique="${tech}"]`);
+        const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
+        
+        if (item && box) {
+          // Remove placeholder if present
+          const placeholder = box.querySelector('.placeholder');
+          if (placeholder) {
+            placeholder.remove();
+          }
+          
+          // Move item to box, before the emotion label
+          const emotionLabel = box.querySelector('.emotion-label');
+          if (emotionLabel) {
+            box.insertBefore(item, emotionLabel);
+          } else {
+            box.appendChild(item);
+          }
+          
+          item.style.position = 'relative';
+          console.log(`Restored match: ${tech} → ${emo}`);
+        } else {
+          console.warn(`Could not find elements for match: ${tech} → ${emo}`);
+          console.log("Available techniques:", Array.from(document.querySelectorAll('.technique-item')).map(el => el.dataset.technique));
+          console.log("Available emotions:", Array.from(document.querySelectorAll('.emotion-box')).map(el => el.dataset.emotion));
+        }
+      });
+    }
     
     // Re-initialize drag and drop for any remaining items
     if (typeof $ !== 'undefined') {
@@ -423,7 +440,43 @@ document.addEventListener('DOMContentLoaded', function() {
       $('.technique-item').draggable({
         revert: 'invalid',
         helper: 'clone',
-        cursor: 'move'
+        cursor: 'move',
+        start: function(event, ui) {
+          $(this).addClass('dragging');
+        },
+        stop: function(event, ui) {
+          $(this).removeClass('dragging');
+          setTimeout(saveCurrentSelections, 100);
+        }
+      });
+      
+      $('.emotion-box').droppable({
+        accept: '.technique-item',
+        hoverClass: 'ui-droppable-hover',
+        drop: function(event, ui) {
+          const $droppedItem = ui.draggable;
+          const $dropZone = $(this);
+          
+          // If there's already an item in this box, move it back
+          const $existingItem = $dropZone.find('.technique-item');
+          if ($existingItem.length) {
+            $('#tech-list').append($existingItem);
+          }
+          
+          // Remove placeholder text
+          $dropZone.find('.placeholder').remove();
+          
+          // Move dropped item to this box
+          $droppedItem.appendTo($dropZone);
+          $droppedItem.css({
+            top: 0,
+            left: 0,
+            position: 'relative'
+          });
+          
+          // Auto-save after drop
+          setTimeout(saveCurrentSelections, 100);
+        }
       });
     }
   }
@@ -921,6 +974,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize drag and drop for matching questions
 if (document.querySelector('.matching-container')) {
     $(document).ready(function() {
+        // Initialize draggable
         $('.technique-item').draggable({
             revert: 'invalid',
             helper: 'clone',
@@ -935,6 +989,7 @@ if (document.querySelector('.matching-container')) {
             }
         });
 
+        // Initialize droppable
         $('.emotion-box').droppable({
             accept: '.technique-item',
             hoverClass: 'ui-droppable-hover',
@@ -942,33 +997,118 @@ if (document.querySelector('.matching-container')) {
                 const $droppedItem = ui.draggable;
                 const $dropZone = $(this);
                 
+                // Store the source and target for saving
+                const technique = $droppedItem.data('technique');
+                const emotion = $dropZone.data('emotion');
+                console.log(`Dropping ${technique} into ${emotion}`);
+                
                 // If there's already an item in this box, move it back
                 const $existingItem = $dropZone.find('.technique-item');
                 if ($existingItem.length) {
                     $('#tech-list').append($existingItem);
+                    $existingItem.css({
+                        position: 'relative',
+                        top: 0,
+                        left: 0
+                    });
                 }
                 
                 // Remove placeholder text only, keep the emotion label
                 $dropZone.find('.placeholder').remove();
                 
+                // Clone the dragged item if it was a helper
+                let $itemToPlace;
+                if (ui.helper.hasClass('ui-draggable-dragging')) {
+                    // Using the original instead of the helper
+                    $itemToPlace = $droppedItem;
+                    // Remove from original location
+                    $droppedItem.detach();
+                } else {
+                    $itemToPlace = $droppedItem;
+                }
+                
                 // Move dropped item to this box, before the emotion label
                 const $emotionLabel = $dropZone.find('.emotion-label');
                 if ($emotionLabel.length) {
-                    $droppedItem.insertBefore($emotionLabel);
+                    $itemToPlace.insertBefore($emotionLabel);
                 } else {
-                    $dropZone.append($droppedItem);
+                    $dropZone.append($itemToPlace);
                 }
                 
-                $droppedItem.css({
+                // Reset position
+                $itemToPlace.css({
                     top: 0,
                     left: 0,
                     position: 'relative'
                 });
                 
-                // Auto-save after drop
-                setTimeout(saveCurrentSelections, 100);
+                // Explicitly save this match
+                setTimeout(function() {
+                    // Build current state of all matches
+                    const matches = {};
+                    $('.emotion-box').each(function() {
+                        const $box = $(this);
+                        const $technique = $box.find('.technique-item');
+                        if ($technique.length) {
+                            matches[$technique.data('technique')] = $box.data('emotion');
+                        }
+                    });
+                    
+                    console.log("Saving matches:", matches);
+                    fetch('/save_progress', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            answers: {
+                                [currentQuestionId]: matches
+                            },
+                            submitted: false
+                        })
+                    });
+                }, 100);
             }
         });
+        
+        // Restore any saved matches on page load
+        const savedAnswer = {{ saved_answer|tojson|safe if saved_answer else 'null' }};
+        console.log("Checking for saved matches:", savedAnswer);
+        
+        if (savedAnswer && typeof savedAnswer === 'object') {
+            // Clear any existing placements first
+            $('.technique-item').each(function() {
+                $('#tech-list').append($(this));
+            });
+            
+            // Now restore the saved matches
+            Object.entries(savedAnswer).forEach(([tech, emo]) => {
+                const $technique = $(`.technique-item[data-technique="${tech}"]`);
+                const $emotion = $(`.emotion-box[data-emotion="${emo}"]`);
+                
+                if ($technique.length && $emotion.length) {
+                    // Remove placeholder
+                    $emotion.find('.placeholder').remove();
+                    
+                    // Place before emotion label
+                    const $emotionLabel = $emotion.find('.emotion-label');
+                    if ($emotionLabel.length) {
+                        $technique.insertBefore($emotionLabel);
+                    } else {
+                        $emotion.append($technique);
+                    }
+                    
+                    // Reset position
+                    $technique.css({
+                        top: 0,
+                        left: 0,
+                        position: 'relative'
+                    });
+                    
+                    console.log(`Restored match: ${tech} → ${emo}`);
+                }
+            });
+        }
     });
 }
 </script>
@@ -1185,177 +1325,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Check if this question was already answered and show feedback -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  console.log("Restoring saved answers if any");
-  
-  // Get answers from server-provided data
-  const saved = {{ saved_answer|tojson|safe if saved_answer else 'null' }};
-  
-  if (!saved) {
-    console.log("No saved answer found");
-    return;
-  }
-  
-  console.log("Found saved answer:", saved);
-  
-  const type = document.querySelector('.quiz-content').dataset.questionType;
-  if (type === 'scenario') {
-    // single radio
-    console.log("Restoring scenario answer:", saved);
-    const r = document.querySelector(`input[type="radio"][value="${saved}"]`);
-    if (r) {
-      r.checked = true;
-      console.log("Restored radio selection:", saved);
-    }
-  }
-  else if (type === 'identify' || type === 'analysis') {
-    // multiple checkboxes
-    console.log("Restoring identify/analysis answers:", saved);
-    if (Array.isArray(saved)) {
-      saved.forEach(val => {
-        const cb = document.querySelector(`input[type="checkbox"][value="${val}"]`);
-        if (cb) {
-          cb.checked = true;
-          console.log("Restored checkbox:", val);
-        }
-      });
-    }
-  }
-  else if (type === 'match') {
-    // drag-and-drop: move each technique into the saved emotion box
-    console.log("Restoring match answers:", saved);
-    
-    // Clear existing items first to avoid duplicates
-    document.querySelectorAll('.emotion-box').forEach(box => {
-      // Remove any technique items
-      const existingItem = box.querySelector('.technique-item');
-      if (existingItem) {
-        existingItem.remove();
-      }
-      
-      // Ensure placeholder is visible in empty boxes, but don't remove emotion label
-      if (!box.querySelector('.placeholder')) {
-        const placeholder = document.createElement('span');
-        placeholder.className = 'placeholder';
-        placeholder.textContent = 'Drop technique here';
-        
-        const emotionLabel = box.querySelector('.emotion-label');
-        if (emotionLabel) {
-          box.insertBefore(placeholder, emotionLabel);
-        } else {
-          box.appendChild(placeholder);
-        }
-      }
-    });
-    
-    // Now restore saved matches
-    Object.entries(saved).forEach(([tech, emo]) => {
-      const item = document.querySelector(`.technique-item[data-technique="${tech}"]`);
-      const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
-      
-      if (item && box) {
-        // Remove placeholder if present
-        const placeholder = box.querySelector('.placeholder');
-        if (placeholder) {
-          placeholder.remove();
-        }
-        
-        // Move item to box, before the emotion label
-        const emotionLabel = box.querySelector('.emotion-label');
-        if (emotionLabel) {
-          box.insertBefore(item, emotionLabel);
-        } else {
-          box.appendChild(item);
-        }
-        
-        item.style.position = 'relative';
-        console.log(`Restored match: ${tech} → ${emo}`);
-      }
-    });
-    
-    // Re-initialize drag and drop for any remaining items
-    if (typeof $ !== 'undefined') {
-      console.log("Re-initializing drag and drop");
-      $('.technique-item').draggable({
-        revert: 'invalid',
-        helper: 'clone',
-        cursor: 'move'
-      });
-    }
-  }
-  
-  // Check if this question was already submitted (not just auto-saved)
-  const wasSubmitted = {{ is_submitted|tojson|safe }};
-  
-  console.log("Is question submitted:", wasSubmitted);
-  console.log("Question ID:", currentQuestionId);
-  console.log("Saved answer:", saved);
-  
-  // Only show feedback if the answer was actually submitted
-  if (wasSubmitted) {
-    // Get question data
-    const questionData = {{ question|tojson|safe }};
-    let isCorrect = false;
-    
-    // Determine if answer was correct
-    if (type === 'scenario') {
-      isCorrect = saved === questionData.correct_answer;
-    } else if (type === 'match' && typeof saved === 'object') {
-      const userKeys = Object.keys(saved);
-      const correctKeys = Object.keys(questionData.correct_answers);
-      isCorrect = (
-        userKeys.length === correctKeys.length &&
-        userKeys.every(key => saved[key] === questionData.correct_answers[key])
-      );
-    } else if ((type === 'identify' || type === 'analysis') && Array.isArray(saved)) {
-      // Sort both arrays for comparison
-      const sortedUserAnswers = [...saved].sort();
-      const sortedCorrectAnswers = [...questionData.correct_answers].sort();
-      isCorrect = arraysEqual(sortedUserAnswers, sortedCorrectAnswers);
-    }
-    
-    // Show feedback
-    const feedbackDiv = document.getElementById('feedback');
-    const submitBtn = document.getElementById('submit-btn');
-    const nextBtn = document.getElementById('next-btn');
-    
-    if (feedbackDiv && submitBtn && nextBtn) {
-      // Display feedback
-      feedbackDiv.style.display = 'block';
-      feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
-      feedbackDiv.innerHTML = `
-        <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
-        <p>${isCorrect ? 
-            'Great job! You can proceed to the next question.' : 
-            'Not quite right. ' + questionData.explanation}</p>
-      `;
-      
-      // Add help text
-      const currentQ = {{ current_question }};
-      const answer = quizAnswers[currentQ];
-      if (answer) {
-        const helpText = document.createElement('div');
-        helpText.className = 'help-text';
-        helpText.innerHTML = `
-          <strong>Correct Answer:</strong><br>
-          ${Array.isArray(answer.correct) ? 
-              answer.correct.join(', ') : 
-              (typeof answer.correct === 'object' ? 
-                  Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
-                  answer.correct)
-          }<br><br>
-          <strong>Explanation:</strong><br>
-          ${answer.explanation}
-        `;
-        feedbackDiv.appendChild(helpText);
-      }
-      
-      // Update button states
-      submitBtn.disabled = true;
-      nextBtn.style.display = 'inline-block';
-    }
-  } else {
-    console.log("Answer was auto-saved but not submitted yet");
-  }
+  // We already have a more thorough initialization earlier in the file
+  // This duplicate code is being removed to prevent conflicts
 });
 </script>
 
