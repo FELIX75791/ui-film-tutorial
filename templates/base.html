@@ -18,6 +18,8 @@
 <body>
 
 <header class="topbar">
+  <div class="topbar-inner">
+  <a href="{{ url_for('home') }}" class="site-title">Filmers</a>
   <nav class="nav">
     {% macro nav_link(url, label, code) -%}
       <a href="{{ url }}" class="{{ 'active' if page==code else '' }}">{{ label }}</a>
@@ -33,7 +35,7 @@
       <a href="#" class="dropbtn {{ 'active' if page=='tutorial' else '' }}">
         Tutorial <span class="caret">▾</span>
       </a>
-      
+
       <div class="dropdown-content">
         <a href="/category/angle-movement">Angle &amp; Movement</a>
         <a href="/category/shot-composition">Shots &amp; Compositions</a>
@@ -45,6 +47,7 @@
     {{ nav_link(url_for('quiz'),      'Quiz',      'quiz') }}
     {{ nav_link(url_for('contact'),   'Contact',   'contact') }}
   </nav>
+  </div>
 </header>
 
 <main>
