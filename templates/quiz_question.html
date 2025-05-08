@@ -511,9 +511,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-
-<!-- Add enhanced drag and drop functionality for Question3 and Question4 -->
-<script src="{{ url_for('static', filename='js/question-drag.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -638,7 +635,6 @@ function saveCurrentSelections() {
     // Get selected answers based on question type
     let answers;
     const questionType = document.querySelector('.quiz-content').dataset.questionType;
-    const currentQuestion = {{ current_question }};
     
     if (questionType === 'scenario') {
         const selectedRadio = document.querySelector('input[type="radio"]:checked');
@@ -659,14 +655,11 @@ function saveCurrentSelections() {
     // Only save if we have selections
     if ((Array.isArray(answers) && answers.length > 0) || 
         (typeof answers === 'object' && Object.keys(answers).length > 0) ||
-        (typeof answers === 'string' && answers)) {
+        (typeof answers === 'string')) {
         
         console.log("Auto-saving current selections:", answers);
         
-        // Save progress to session with a flag indicating whether it's submitted or a draft
-        // Get the submitted state from existing data
-        const wasSubmitted = {{ "true" if session.get("quiz_submitted", {}).get(current_question|string, False) else "false" }};
-        
+        // Save progress to session with a flag indicating it's only a draft (not submitted)
         fetch('/save_progress', {
             method: 'POST',
             headers: {
@@ -676,7 +669,7 @@ function saveCurrentSelections() {
                 answers: {
                     [currentQuestion]: answers
                 },
-                submitted: wasSubmitted  // Preserve the submission state
+                submitted: false  // Add submitted flag = false
             })
         }).catch(error => {
             console.error('Error auto-saving selections:', error);
@@ -689,7 +682,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextBtn = document.getElementById('next-btn');
     const resetBtn = document.getElementById('reset-btn');
     const feedbackDiv = document.getElementById('feedback');
-    const currentQuestion = {{ current_question }};
     
     // Add event listeners to automatically save when users make selections
     
@@ -705,75 +697,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // For matching questions - save after drag and drop
     if (typeof $ !== 'undefined') {
-        // The detailed initialization is now in question-drag.js
-        // This is just a fallback to ensure the drop event still triggers save
         $('.emotion-box').on('drop', function(event, ui) {
             // Allow a brief delay for the DOM to update after drop
             setTimeout(saveCurrentSelections, 100);
         });
-    }
-    
-    // Ensure saved answers are restored on page load
-    const savedAnswerData = {{ saved_answer|tojson|safe }};
-    const wasSubmitted = {{ "true" if session.get("quiz_submitted", {}).get(current_question|string, False) else "false" }};
-    
-    if (savedAnswerData) {
-        // The server already restored the UI state, but let's ensure the submission state is correct
-        if (wasSubmitted) {
-            // If this was submitted, make sure it shows the feedback and disables the submit button
-            const questionData = {{ question|tojson|safe }};
-            let isCorrect = false;
-            const questionType = document.querySelector('.quiz-content').dataset.questionType;
-            
-            // Determine if answer was correct
-            if (questionType === 'scenario') {
-                isCorrect = savedAnswerData === questionData.correct_answer;
-            } else if (questionType === 'match' && typeof savedAnswerData === 'object') {
-                const userKeys = Object.keys(savedAnswerData);
-                const correctKeys = Object.keys(questionData.correct_answers);
-                isCorrect = (
-                    userKeys.length === correctKeys.length &&
-                    userKeys.every(key => savedAnswerData[key] === questionData.correct_answers[key])
-                );
-            } else if ((questionType === 'identify' || questionType === 'analysis') && Array.isArray(savedAnswerData)) {
-                const sortedUserAnswers = [...savedAnswerData].sort();
-                const sortedCorrectAnswers = [...questionData.correct_answers].sort();
-                isCorrect = arraysEqual(sortedUserAnswers, sortedCorrectAnswers);
-            }
-            
-            // Show feedback that persists on refresh
-            if (feedbackDiv && submitBtn && nextBtn) {
-                // Display feedback
-                feedbackDiv.style.display = 'block';
-                feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
-                feedbackDiv.innerHTML = `
-                    <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
-                    <p>${isCorrect ? 
-                        'Great job! You can proceed to the next question.' : 
-                        'Not quite right. ' + questionData.explanation}</p>
-                `;
-                
-                // Add help text if not correct
-                if (!isCorrect) {
-                    const helpText = document.createElement('div');
-                    helpText.className = 'help-text';
-                    helpText.innerHTML = `
-                        <strong>Correct Answer:</strong><br>
-                        ${Array.isArray(questionData.correct_answers) ? 
-                            questionData.correct_answers.join(', ') : 
-                            (typeof questionData.correct_answers === 'object' ? 
-                                Object.entries(questionData.correct_answers).map(([k,v]) => `${k} → ${v}`).join('<br>') :
-                                questionData.correct_answer)
-                        }
-                    `;
-                    feedbackDiv.appendChild(helpText);
-                }
-                
-                // Update button states
-                submitBtn.style.display = 'none';
-                nextBtn.style.display = 'inline-block';
-            }
-        }
     }
     
     // Reset button functionality
@@ -853,7 +780,145 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get selected answers based on question type
+            let answers;
+            const questionType = document.querySelector('.quiz-content').getAttribute('data-question-type');
+            
+            if (questionType === 'scenario') {
+                const selectedRadio = document.querySelector('input[type="radio"]:checked');
+                answers = selectedRadio ? selectedRadio.value : null;
+            } else if (questionType === 'identify' || questionType === 'analysis') {
+                answers = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                    .map(input => input.value);
+            } else if (questionType === 'match') {
+                answers = {};
+                document.querySelectorAll('.emotion-box').forEach(box => {
+                    const technique = box.querySelector('.technique-item')?.dataset.technique;
+                    if (technique) {
+                        answers[technique] = box.dataset.emotion;
+                    }
+                });
+            }
+            
+            // Get correct answers from the question data
+            const questionData = {{ question|tojson|safe }};
+            let isCorrect = false;
+            
+            if (questionType === 'scenario') {
+                isCorrect = answers === questionData.correct_answer;
+            } else if (questionType === 'match') {
+                // Compare dictionaries by their contents
+                const userKeys = Object.keys(answers);
+                const correctKeys = Object.keys(questionData.correct_answers);
+                isCorrect = (
+                    userKeys.length === correctKeys.length &&
+                    userKeys.every(key => 
+                        answers[key] === questionData.correct_answers[key]
+                    )
+                );
+            } else if (questionType === 'identify' || questionType === 'analysis') {
+                isCorrect = arraysEqual(answers.sort(), questionData.correct_answers.sort());
+            }
+            
+            // Save progress and show feedback
+            fetch('/save_progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    answers: {
+                        [currentQuestion]: answers
+                    },
+                    submitted: true  // Set submitted flag to true on submit
+                })
+            })
+            .then(response => response.json())
+            .then(() => {
+                // Show feedback
+                feedbackDiv.style.display = 'block';
+                feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
+                feedbackDiv.innerHTML = `
+                    <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+                    <p>${isCorrect ? 
+                        'Great job! You can proceed to the next question.' : 
+                        'Not quite right. ' + questionData.explanation}</p>
+                `;
+                
+                // Show next button
+                if (nextBtn) {
+                    nextBtn.style.display = 'inline-block';
+                }
+                
+                // Disable submit button
+                submitBtn.disabled = true;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to save your answer. Please try again.');
+            });
+        });
+    }
 });
+
+// Initialize drag and drop for matching questions
+if (document.querySelector('.matching-container')) {
+    $(document).ready(function() {
+        $('.technique-item').draggable({
+            revert: 'invalid',
+            helper: 'clone',
+            cursor: 'move',
+            start: function(event, ui) {
+                $(this).addClass('dragging');
+            },
+            stop: function(event, ui) {
+                $(this).removeClass('dragging');
+                // Auto-save after drag operation completed
+                setTimeout(saveCurrentSelections, 100);
+            }
+        });
+
+        $('.emotion-box').droppable({
+            accept: '.technique-item',
+            hoverClass: 'ui-droppable-hover',
+            drop: function(event, ui) {
+                const $droppedItem = ui.draggable;
+                const $dropZone = $(this);
+                
+                // If there's already an item in this box, move it back
+                const $existingItem = $dropZone.find('.technique-item');
+                if ($existingItem.length) {
+                    $('#tech-list').append($existingItem);
+                }
+                
+                // Remove placeholder text only, keep the emotion label
+                $dropZone.find('.placeholder').remove();
+                
+                // Move dropped item to this box, before the emotion label
+                const $emotionLabel = $dropZone.find('.emotion-label');
+                if ($emotionLabel.length) {
+                    $droppedItem.insertBefore($emotionLabel);
+                } else {
+                    $dropZone.append($droppedItem);
+                }
+                
+                $droppedItem.css({
+                    top: 0,
+                    left: 0,
+                    position: 'relative'
+                });
+                
+                // Auto-save after drop
+                setTimeout(saveCurrentSelections, 100);
+            }
+        });
+    });
+}
 </script>
 
 <!-- Add this section after the quiz content to show correct answers -->
