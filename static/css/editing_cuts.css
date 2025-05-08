@@ -2,11 +2,11 @@
 
 .cuts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr) !important; /* enforce 2 per row */
+  grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
   margin: 2rem auto;
   max-width: 700px;
-  justify-content: center;
+  justify-items: center;   /* center each card in its cell */
 }
 
 .cuts-row {
@@ -17,9 +17,9 @@
 
 /* keep square shape */
 .cut-card{
-  position:relative;
-  width:100%;
-  padding-top:100%;             /* 1:1 aspect ratio trick */
+  position: relative;
+  width: 100%;
+  padding-top: 100%;              /* 1:1 aspect ratio trick */
   border-radius:.5rem;
   overflow:hidden;
   box-shadow:0 6px 14px rgba(0,0,0,.28);
