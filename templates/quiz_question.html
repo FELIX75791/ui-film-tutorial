@@ -325,6 +325,10 @@
 </script>
 
 <script>
+// Add this at the start of your script section to define current question ID 
+// as a global variable that can be used throughout your scripts
+const currentQuestionId = {{ current_question }};
+
 document.addEventListener('DOMContentLoaded', function() {
   console.log("Restoring saved answers if any");
   
@@ -379,7 +383,6 @@ document.addEventListener('DOMContentLoaded', function() {
         placeholder.className = 'placeholder';
         placeholder.textContent = 'Drop technique here';
         
-        // Insert before the emotion label if it exists
         const emotionLabel = box.querySelector('.emotion-label');
         if (emotionLabel) {
           box.insertBefore(placeholder, emotionLabel);
@@ -389,117 +392,114 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
-    // Now apply the saved matches
-    if (saved && typeof saved === 'object') {
-      Object.entries(saved).forEach(([tech, emo]) => {
-        console.log(`Placing ${tech} in ${emo}`);
-        
-        const item = document.querySelector(`#tech-list .technique-item[data-technique="${tech}"], .technique-item[data-technique="${tech}"]`);
-        const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
-        
-        if (item && box) {
-          // Remove placeholder if present
-          const placeholder = box.querySelector('.placeholder');
-          if (placeholder) {
-            placeholder.remove();
-          }
-          
-          // Move item to box, before the emotion label
-          const emotionLabel = box.querySelector('.emotion-label');
-          if (emotionLabel) {
-            box.insertBefore(item, emotionLabel);
-          } else {
-            box.appendChild(item);
-          }
-          
-          item.style.position = 'relative';
-          console.log(`Restored match: ${tech} → ${emo}`);
-        }
-      });
+    // Now restore saved matches
+    Object.entries(saved).forEach(([tech, emo]) => {
+      const item = document.querySelector(`.technique-item[data-technique="${tech}"]`);
+      const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
       
-      // Re-initialize drag and drop for any remaining items
-      if (typeof $ !== 'undefined') {
-        console.log("Re-initializing drag and drop");
-        $('.technique-item').draggable({
-          revert: 'invalid',
-          helper: 'clone',
-          cursor: 'move'
-        });
+      if (item && box) {
+        // Remove placeholder if present
+        const placeholder = box.querySelector('.placeholder');
+        if (placeholder) {
+          placeholder.remove();
+        }
+        
+        // Move item to box, before the emotion label
+        const emotionLabel = box.querySelector('.emotion-label');
+        if (emotionLabel) {
+          box.insertBefore(item, emotionLabel);
+        } else {
+          box.appendChild(item);
+        }
+        
+        item.style.position = 'relative';
+        console.log(`Restored match: ${tech} → ${emo}`);
       }
+    });
+    
+    // Re-initialize drag and drop for any remaining items
+    if (typeof $ !== 'undefined') {
+      console.log("Re-initializing drag and drop");
+      $('.technique-item').draggable({
+        revert: 'invalid',
+        helper: 'clone',
+        cursor: 'move'
+      });
     }
   }
   
-  // Check if this question was already answered and show feedback
-  if (saved) {
-    // Get submission status from the server
-    const wasSubmitted = {{ "true" if session.get("quiz_submitted", {}).get(current_question|string, False) else "false" }};
+  // Check if this question was already submitted (not just auto-saved)
+  const wasSubmitted = {{ is_submitted|tojson|safe }};
+  
+  console.log("Is question submitted:", wasSubmitted);
+  console.log("Question ID:", currentQuestionId);
+  console.log("Saved answer:", saved);
+  
+  // Only show feedback if the answer was actually submitted
+  if (wasSubmitted) {
+    // Get question data
+    const questionData = {{ question|tojson|safe }};
+    let isCorrect = false;
     
-    // Only show feedback if the answer was actually submitted, not just auto-saved
-    if (wasSubmitted) {
-      // Get question data
-      const questionData = {{ question|tojson|safe }};
-      let isCorrect = false;
-      
-      // Determine if answer was correct
-      if (type === 'scenario') {
-        isCorrect = saved === questionData.correct_answer;
-      } else if (type === 'match' && typeof saved === 'object') {
-        const userKeys = Object.keys(saved);
-        const correctKeys = Object.keys(questionData.correct_answers);
-        isCorrect = (
-            userKeys.length === correctKeys.length &&
-            userKeys.every(key => saved[key] === questionData.correct_answers[key])
-        );
-      } else if ((type === 'identify' || type === 'analysis') && Array.isArray(saved)) {
-        // Sort both arrays for comparison
-        const sortedUserAnswers = [...saved].sort();
-        const sortedCorrectAnswers = [...questionData.correct_answers].sort();
-        isCorrect = arraysEqual(sortedUserAnswers, sortedCorrectAnswers);
-      }
-      
-      // Show feedback
-      const feedbackDiv = document.getElementById('feedback');
-      const submitBtn = document.getElementById('submit-btn');
-      const nextBtn = document.getElementById('next-btn');
-      
-      if (feedbackDiv && submitBtn && nextBtn) {
-        // Display feedback
-        feedbackDiv.style.display = 'block';
-        feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
-        feedbackDiv.innerHTML = `
-          <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
-          <p>${isCorrect ? 
-              'Great job! You can proceed to the next question.' : 
-              'Not quite right. ' + questionData.explanation}</p>
-        `;
-        
-        // Add help text
-        const currentQ = {{ current_question }};
-        const answer = quizAnswers[currentQ];
-        if (answer) {
-          const helpText = document.createElement('div');
-          helpText.className = 'help-text';
-          helpText.innerHTML = `
-            <strong>Correct Answer:</strong><br>
-            ${Array.isArray(answer.correct) ? 
-                answer.correct.join(', ') : 
-                (typeof answer.correct === 'object' ? 
-                    Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
-                    answer.correct)
-            }<br><br>
-            <strong>Explanation:</strong><br>
-            ${answer.explanation}
-          `;
-          feedbackDiv.appendChild(helpText);
-        }
-        
-        // Update button states
-        submitBtn.disabled = true;
-        nextBtn.style.display = 'inline-block';
-      }
-    } else {
-      console.log("Answer was auto-saved but not submitted yet");
+    // Determine if answer was correct
+    if (type === 'scenario') {
+      isCorrect = saved === questionData.correct_answer;
+    } else if (type === 'match' && typeof saved === 'object') {
+      const userKeys = Object.keys(saved);
+      const correctKeys = Object.keys(questionData.correct_answers);
+      isCorrect = (
+        userKeys.length === correctKeys.length &&
+        userKeys.every(key => saved[key] === questionData.correct_answers[key])
+      );
+    } else if ((type === 'identify' || type === 'analysis') && Array.isArray(saved)) {
+      // Sort both arrays for comparison
+      const sortedUserAnswers = [...saved].sort();
+      const sortedCorrectAnswers = [...questionData.correct_answers].sort();
+      isCorrect = arraysEqual(sortedUserAnswers, sortedCorrectAnswers);
     }
+    
+    // Show feedback
+    const feedbackDiv = document.getElementById('feedback');
+    const submitBtn = document.getElementById('submit-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    if (feedbackDiv && submitBtn && nextBtn) {
+      // Display feedback
+      feedbackDiv.style.display = 'block';
+      feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
+      feedbackDiv.innerHTML = `
+        <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+        <p>${isCorrect ? 
+            'Great job! You can proceed to the next question.' : 
+            'Not quite right. ' + questionData.explanation}</p>
+      `;
+      
+      // Add help text
+      const currentQ = {{ current_question }};
+      const answer = quizAnswers[currentQ];
+      if (answer) {
+        const helpText = document.createElement('div');
+        helpText.className = 'help-text';
+        helpText.innerHTML = `
+          <strong>Correct Answer:</strong><br>
+          ${Array.isArray(answer.correct) ? 
+              answer.correct.join(', ') : 
+              (typeof answer.correct === 'object' ? 
+                  Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
+                  answer.correct)
+          }<br><br>
+          <strong>Explanation:</strong><br>
+          ${answer.explanation}
+        `;
+        feedbackDiv.appendChild(helpText);
+      }
+      
+      // Update button states
+      submitBtn.disabled = true;
+      nextBtn.style.display = 'inline-block';
+    }
+  } else {
+    console.log("Answer was auto-saved but not submitted yet");
   }
 });
 </script>
@@ -635,6 +635,7 @@ function saveCurrentSelections() {
     // Get selected answers based on question type
     let answers;
     const questionType = document.querySelector('.quiz-content').dataset.questionType;
+    const currentQuestion = {{ current_question }};
     
     if (questionType === 'scenario') {
         const selectedRadio = document.querySelector('input[type="radio"]:checked');
@@ -659,6 +660,11 @@ function saveCurrentSelections() {
         
         console.log("Auto-saving current selections:", answers);
         
+        // Special case for question 1
+        if (currentQuestion === 1) {
+            console.log("Auto-saving Question 1:", answers);
+        }
+        
         // Save progress to session with a flag indicating it's only a draft (not submitted)
         fetch('/save_progress', {
             method: 'POST',
@@ -671,7 +677,17 @@ function saveCurrentSelections() {
                 },
                 submitted: false  // Add submitted flag = false
             })
-        }).catch(error => {
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Auto-save response:", data);
+            
+            // Special verification for question 1
+            if (currentQuestion === 1) {
+                console.log("Auto-save confirmation for Q1:", data);
+            }
+        })
+        .catch(error => {
             console.error('Error auto-saving selections:', error);
         });
     }
@@ -706,6 +722,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset button functionality
     if (resetBtn) {
         resetBtn.addEventListener('click', function() {
+            const currentQuestion = {{ current_question }};
+            
             // Reset checkboxes
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                 cb.checked = false;
@@ -774,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     answers: {
-                        [currentQuestion]: null
+                        [currentQuestionId]: null
                     }
                 })
             });
@@ -805,6 +823,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             
+            // Special handling for question 1
+            if (currentQuestion === 1) {
+                console.log("Submitting Question 1:", answers);
+            }
+            
             // Get correct answers from the question data
             const questionData = {{ question|tojson|safe }};
             let isCorrect = false;
@@ -825,21 +848,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 isCorrect = arraysEqual(answers.sort(), questionData.correct_answers.sort());
             }
             
+            // Make the submission request
+            const submitData = {
+                answers: {
+                    [currentQuestion]: answers
+                },
+                submitted: true  // Always set submitted flag to true
+            };
+            
+            console.log("Sending submission data:", submitData);
+            
             // Save progress and show feedback
             fetch('/save_progress', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    answers: {
-                        [currentQuestion]: answers
-                    },
-                    submitted: true  // Set submitted flag to true on submit
-                })
+                body: JSON.stringify(submitData)
             })
             .then(response => response.json())
-            .then(() => {
+            .then((data) => {
+                console.log("Save response:", data);
+                
                 // Show feedback
                 feedbackDiv.style.display = 'block';
                 feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
@@ -857,6 +887,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Disable submit button
                 submitBtn.disabled = true;
+                
+                // Add help text after submitting
+                setTimeout(() => {
+                    const currentQ = {{ current_question }};
+                    const answer = quizAnswers[currentQ];
+                    if (answer) {
+                        const helpText = document.createElement('div');
+                        helpText.className = 'help-text';
+                        helpText.innerHTML = `
+                            <strong>Correct Answer:</strong><br>
+                            ${Array.isArray(answer.correct) ? 
+                                answer.correct.join(', ') : 
+                                (typeof answer.correct === 'object' ? 
+                                    Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
+                                    answer.correct)
+                            }<br><br>
+                            <strong>Explanation:</strong><br>
+                            ${answer.explanation}
+                        `;
+                        document.querySelector('.quiz-feedback')?.appendChild(helpText);
+                    }
+                }, 500);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -1008,6 +1060,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submit-btn');
     const nextBtn = document.getElementById('next-btn');
     const feedbackDiv = document.getElementById('feedback');
+    const currentQuestion = {{ current_question }};
     
     if (submitBtn) {
         submitBtn.addEventListener('click', function(e) {
@@ -1033,6 +1086,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             
+            // Special handling for question 1
+            if (currentQuestion === 1) {
+                console.log("Submitting Question 1:", answers);
+            }
+            
             // Get correct answers from the question data
             const questionData = {{ question|tojson|safe }};
             let isCorrect = false;
@@ -1053,21 +1111,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 isCorrect = arraysEqual(answers.sort(), questionData.correct_answers.sort());
             }
             
+            // Make the submission request
+            const submitData = {
+                answers: {
+                    [currentQuestion]: answers
+                },
+                submitted: true  // Always set submitted flag to true
+            };
+            
+            console.log("Sending submission data:", submitData);
+            
             // Save progress and show feedback
             fetch('/save_progress', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    answers: {
-                        [currentQuestion]: answers
-                    },
-                    submitted: true  // Set submitted flag to true on submit
-                })
+                body: JSON.stringify(submitData)
             })
             .then(response => response.json())
-            .then(() => {
+            .then((data) => {
+                console.log("Save response:", data);
+                
                 // Show feedback
                 feedbackDiv.style.display = 'block';
                 feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
@@ -1085,6 +1150,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Disable submit button
                 submitBtn.disabled = true;
+                
+                // Add help text after submitting
+                setTimeout(() => {
+                    const currentQ = {{ current_question }};
+                    const answer = quizAnswers[currentQ];
+                    if (answer) {
+                        const helpText = document.createElement('div');
+                        helpText.className = 'help-text';
+                        helpText.innerHTML = `
+                            <strong>Correct Answer:</strong><br>
+                            ${Array.isArray(answer.correct) ? 
+                                answer.correct.join(', ') : 
+                                (typeof answer.correct === 'object' ? 
+                                    Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
+                                    answer.correct)
+                            }<br><br>
+                            <strong>Explanation:</strong><br>
+                            ${answer.explanation}
+                        `;
+                        document.querySelector('.quiz-feedback')?.appendChild(helpText);
+                    }
+                }, 500);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -1151,7 +1238,6 @@ document.addEventListener('DOMContentLoaded', function() {
         placeholder.className = 'placeholder';
         placeholder.textContent = 'Drop technique here';
         
-        // Insert before the emotion label if it exists
         const emotionLabel = box.querySelector('.emotion-label');
         if (emotionLabel) {
           box.insertBefore(placeholder, emotionLabel);
@@ -1161,116 +1247,150 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
-    // Now apply the saved matches
-    if (saved && typeof saved === 'object') {
-      Object.entries(saved).forEach(([tech, emo]) => {
-        console.log(`Placing ${tech} in ${emo}`);
-        
-        const item = document.querySelector(`#tech-list .technique-item[data-technique="${tech}"], .technique-item[data-technique="${tech}"]`);
-        const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
-        
-        if (item && box) {
-          // Remove placeholder if present
-          const placeholder = box.querySelector('.placeholder');
-          if (placeholder) {
-            placeholder.remove();
-          }
-          
-          // Move item to box, before the emotion label
-          const emotionLabel = box.querySelector('.emotion-label');
-          if (emotionLabel) {
-            box.insertBefore(item, emotionLabel);
-          } else {
-            box.appendChild(item);
-          }
-          
-          item.style.position = 'relative';
-          console.log(`Restored match: ${tech} → ${emo}`);
-        }
-      });
+    // Now restore saved matches
+    Object.entries(saved).forEach(([tech, emo]) => {
+      const item = document.querySelector(`.technique-item[data-technique="${tech}"]`);
+      const box = document.querySelector(`.emotion-box[data-emotion="${emo}"]`);
       
-      // Re-initialize drag and drop for any remaining items
-      if (typeof $ !== 'undefined') {
-        console.log("Re-initializing drag and drop");
-        $('.technique-item').draggable({
-          revert: 'invalid',
-          helper: 'clone',
-          cursor: 'move'
-        });
+      if (item && box) {
+        // Remove placeholder if present
+        const placeholder = box.querySelector('.placeholder');
+        if (placeholder) {
+          placeholder.remove();
+        }
+        
+        // Move item to box, before the emotion label
+        const emotionLabel = box.querySelector('.emotion-label');
+        if (emotionLabel) {
+          box.insertBefore(item, emotionLabel);
+        } else {
+          box.appendChild(item);
+        }
+        
+        item.style.position = 'relative';
+        console.log(`Restored match: ${tech} → ${emo}`);
       }
+    });
+    
+    // Re-initialize drag and drop for any remaining items
+    if (typeof $ !== 'undefined') {
+      console.log("Re-initializing drag and drop");
+      $('.technique-item').draggable({
+        revert: 'invalid',
+        helper: 'clone',
+        cursor: 'move'
+      });
     }
   }
   
-  // Check if this question was already answered and show feedback
-  if (saved) {
-    // Get submission status from the server
-    const wasSubmitted = {{ "true" if session.get("quiz_submitted", {}).get(current_question|string, False) else "false" }};
+  // Check if this question was already submitted (not just auto-saved)
+  const wasSubmitted = {{ is_submitted|tojson|safe }};
+  
+  console.log("Is question submitted:", wasSubmitted);
+  console.log("Question ID:", currentQuestionId);
+  console.log("Saved answer:", saved);
+  
+  // Only show feedback if the answer was actually submitted
+  if (wasSubmitted) {
+    // Get question data
+    const questionData = {{ question|tojson|safe }};
+    let isCorrect = false;
     
-    // Only show feedback if the answer was actually submitted, not just auto-saved
-    if (wasSubmitted) {
-      // Get question data
-      const questionData = {{ question|tojson|safe }};
-      let isCorrect = false;
+    // Determine if answer was correct
+    if (type === 'scenario') {
+      isCorrect = saved === questionData.correct_answer;
+    } else if (type === 'match' && typeof saved === 'object') {
+      const userKeys = Object.keys(saved);
+      const correctKeys = Object.keys(questionData.correct_answers);
+      isCorrect = (
+        userKeys.length === correctKeys.length &&
+        userKeys.every(key => saved[key] === questionData.correct_answers[key])
+      );
+    } else if ((type === 'identify' || type === 'analysis') && Array.isArray(saved)) {
+      // Sort both arrays for comparison
+      const sortedUserAnswers = [...saved].sort();
+      const sortedCorrectAnswers = [...questionData.correct_answers].sort();
+      isCorrect = arraysEqual(sortedUserAnswers, sortedCorrectAnswers);
+    }
+    
+    // Show feedback
+    const feedbackDiv = document.getElementById('feedback');
+    const submitBtn = document.getElementById('submit-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    if (feedbackDiv && submitBtn && nextBtn) {
+      // Display feedback
+      feedbackDiv.style.display = 'block';
+      feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
+      feedbackDiv.innerHTML = `
+        <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
+        <p>${isCorrect ? 
+            'Great job! You can proceed to the next question.' : 
+            'Not quite right. ' + questionData.explanation}</p>
+      `;
       
-      // Determine if answer was correct
-      if (type === 'scenario') {
-        isCorrect = saved === questionData.correct_answer;
-      } else if (type === 'match' && typeof saved === 'object') {
-        const userKeys = Object.keys(saved);
-        const correctKeys = Object.keys(questionData.correct_answers);
-        isCorrect = (
-            userKeys.length === correctKeys.length &&
-            userKeys.every(key => saved[key] === questionData.correct_answers[key])
-        );
-      } else if ((type === 'identify' || type === 'analysis') && Array.isArray(saved)) {
-        // Sort both arrays for comparison
-        const sortedUserAnswers = [...saved].sort();
-        const sortedCorrectAnswers = [...questionData.correct_answers].sort();
-        isCorrect = arraysEqual(sortedUserAnswers, sortedCorrectAnswers);
-      }
-      
-      // Show feedback
-      const feedbackDiv = document.getElementById('feedback');
-      const submitBtn = document.getElementById('submit-btn');
-      const nextBtn = document.getElementById('next-btn');
-      
-      if (feedbackDiv && submitBtn && nextBtn) {
-        // Display feedback
-        feedbackDiv.style.display = 'block';
-        feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
-        feedbackDiv.innerHTML = `
-          <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
-          <p>${isCorrect ? 
-              'Great job! You can proceed to the next question.' : 
-              'Not quite right. ' + questionData.explanation}</p>
+      // Add help text
+      const currentQ = {{ current_question }};
+      const answer = quizAnswers[currentQ];
+      if (answer) {
+        const helpText = document.createElement('div');
+        helpText.className = 'help-text';
+        helpText.innerHTML = `
+          <strong>Correct Answer:</strong><br>
+          ${Array.isArray(answer.correct) ? 
+              answer.correct.join(', ') : 
+              (typeof answer.correct === 'object' ? 
+                  Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
+                  answer.correct)
+          }<br><br>
+          <strong>Explanation:</strong><br>
+          ${answer.explanation}
         `;
-        
-        // Add help text
-        const currentQ = {{ current_question }};
-        const answer = quizAnswers[currentQ];
-        if (answer) {
-          const helpText = document.createElement('div');
-          helpText.className = 'help-text';
-          helpText.innerHTML = `
-            <strong>Correct Answer:</strong><br>
-            ${Array.isArray(answer.correct) ? 
-                answer.correct.join(', ') : 
-                (typeof answer.correct === 'object' ? 
-                    Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
-                    answer.correct)
-            }<br><br>
-            <strong>Explanation:</strong><br>
-            ${answer.explanation}
-          `;
-          feedbackDiv.appendChild(helpText);
-        }
-        
-        // Update button states
-        submitBtn.disabled = true;
-        nextBtn.style.display = 'inline-block';
+        feedbackDiv.appendChild(helpText);
       }
-    } else {
-      console.log("Answer was auto-saved but not submitted yet");
+      
+      // Update button states
+      submitBtn.disabled = true;
+      nextBtn.style.display = 'inline-block';
+    }
+  } else {
+    console.log("Answer was auto-saved but not submitted yet");
+  }
+});
+</script>
+
+<!-- Add a specific handler for Question 1 checkbox initialization -->
+<script>
+// This helper function will specifically ensure Question 1 checkboxes are initialized correctly
+document.addEventListener('DOMContentLoaded', function() {
+  const currentQuestion = {{ current_question }};
+  
+  // Only run for Question 1
+  if (currentQuestion === 1) {
+    console.log("Special handling for Question 1 initialization");
+    
+    // Get the saved answers from server
+    const savedAnswer = {{ saved_answer|tojson|safe if saved_answer else 'null' }};
+    console.log("Question 1 saved answer:", savedAnswer);
+    
+    if (savedAnswer && Array.isArray(savedAnswer)) {
+      // Force check the checkboxes
+      savedAnswer.forEach(answer => {
+        const checkbox = document.querySelector(`input[type="checkbox"][value="${answer}"]`);
+        if (checkbox) {
+          console.log(`Setting checkbox for ${answer} to checked`);
+          checkbox.checked = true;
+        } else {
+          console.log(`Could not find checkbox for ${answer}`);
+        }
+      });
+      
+      // Verify checkboxes are set
+      setTimeout(() => {
+        const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        console.log(`After initialization, ${checkedBoxes.length} checkboxes are checked`);
+        checkedBoxes.forEach(box => console.log(`- ${box.value} is checked`));
+      }, 100);
     }
   }
 });
