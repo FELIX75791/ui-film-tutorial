@@ -382,8 +382,10 @@ async def quiz_results(request: Request):
 
 @app.get("/quiz/{question_id}", response_class=HTMLResponse)
 async def quiz_question(request: Request, question_id: int):
-    # Get quiz progress from session
     session = request.state.session
+    # Clear progress if starting a new quiz
+    if question_id == 1:
+        session["quiz_progress"] = {}
     quiz_progress = session.get("quiz_progress", {})
     quiz_submitted = session.get("quiz_submitted", {})  # Get submission state
     
