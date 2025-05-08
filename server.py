@@ -84,9 +84,17 @@ async def session_middleware(request: Request, call_next):
     session_id = request.cookies.get("session_id")
     if not session_id:
         session_id = secrets.token_urlsafe(32)
+        print(f"Created new session ID: {session_id}")
+    else:
+        print(f"Using existing session ID: {session_id}")
     
     # Get session data from in-memory store instead of cookie
     session = SESSION_STORE.get(session_id, {})
+    
+    # Check if question 1 state exists
+    q1_answer = session.get("quiz_progress", {}).get("1")
+    q1_submitted = session.get("quiz_submitted", {}).get("1", False)
+    print(f"Session middleware - Q1 state: answer={q1_answer}, submitted={q1_submitted}")
     
     # Store session in request state
     request.state.session = session
@@ -94,8 +102,18 @@ async def session_middleware(request: Request, call_next):
     # Process request
     response = await call_next(request)
     
+    # Get updated session from state (will have changes from route handlers)
+    updated_session = request.state.session
+    
     # Save session back to in-memory store
-    SESSION_STORE[session_id] = session
+    SESSION_STORE[session_id] = updated_session
+    
+    # Check if question 1 state changed
+    updated_q1_answer = updated_session.get("quiz_progress", {}).get("1")
+    updated_q1_submitted = updated_session.get("quiz_submitted", {}).get("1", False)
+    
+    if q1_answer != updated_q1_answer or q1_submitted != updated_q1_submitted:
+        print(f"Q1 state changed: {q1_answer} → {updated_q1_answer}, submitted: {q1_submitted} → {updated_q1_submitted}")
     
     # Save only the session_id to cookie
     if isinstance(response, Response):
@@ -104,7 +122,8 @@ async def session_middleware(request: Request, call_next):
             value=session_id,
             httponly=True,
             secure=False,
-            samesite="lax"
+            samesite="lax",
+            max_age=86400 * 30  # 30 days for better persistence
         )
     
     return response
@@ -286,12 +305,32 @@ async def quiz_redirect():
 
 @app.get("/reset-quiz", response_class=HTMLResponse)
 async def reset_quiz(request: Request):
-    # Reset quiz progress in session
+    # Reset quiz progress in session but preserve question 1
     session = request.state.session
+    
+    # Save question 1 state before resetting
+    q1_answer = None
+    q1_submitted = False
+    
     if "quiz_progress" in session:
-        session["quiz_progress"] = {}
-    if "quiz_submitted" in session:
-        session["quiz_submitted"] = {}
+        q1_answer = session["quiz_progress"].get("1")
+        if "quiz_submitted" in session:
+            q1_submitted = session["quiz_submitted"].get("1", False)
+            
+        # Reset progress except for question 1
+        quiz_progress = {}
+        if q1_answer is not None:
+            quiz_progress["1"] = q1_answer
+        session["quiz_progress"] = quiz_progress
+        
+        # Reset submission state except for question 1
+        quiz_submitted = {}
+        if q1_submitted:
+            quiz_submitted["1"] = True
+        session["quiz_submitted"] = quiz_submitted
+    
+    # Print debug info
+    print(f"After reset - Preserving Q1 answer: {q1_answer}, submitted: {q1_submitted}")
     
     # Redirect to the first question
     return RedirectResponse(url="/quiz/1", status_code=302)
@@ -383,9 +422,12 @@ async def quiz_results(request: Request):
 @app.get("/quiz/{question_id}", response_class=HTMLResponse)
 async def quiz_question(request: Request, question_id: int):
     session = request.state.session
-    # Clear progress if starting a new quiz
-    if question_id == 1:
+    # Initialize progress if not exists but don't clear it if already present
+    if "quiz_progress" not in session:
         session["quiz_progress"] = {}
+    if "quiz_submitted" not in session:
+        session["quiz_submitted"] = {}
+        
     quiz_progress = session.get("quiz_progress", {})
     quiz_submitted = session.get("quiz_submitted", {})  # Get submission state
     
@@ -394,11 +436,36 @@ async def quiz_question(request: Request, question_id: int):
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
     
-    # Get saved answer if it exists
-    saved_answer = quiz_progress.get(str(question_id))
-    
-    # Check if this question has been submitted
-    is_submitted = quiz_submitted.get(str(question_id), False)
+    # Special handling for question 1 - always retrieve saved answer from session
+    if question_id == 1:
+        saved_answer = quiz_progress.get("1")
+        is_submitted = quiz_submitted.get("1", False)
+        print(f"Accessing question 1 - Saved answer: {saved_answer}, Submitted: {is_submitted}")
+        
+        # If we have a session_id cookie but no saved answer, check SESSION_STORE directly
+        if saved_answer is None and request.cookies.get("session_id"):
+            print("Attempt to recover question 1 answer from SESSION_STORE")
+            session_id = request.cookies.get("session_id")
+            alt_session = SESSION_STORE.get(session_id, {})
+            if alt_session:
+                saved_answer = alt_session.get("quiz_progress", {}).get("1")
+                is_submitted = alt_session.get("quiz_submitted", {}).get("1", False)
+                
+                # Update session if found
+                if saved_answer is not None:
+                    print(f"Recovered answer from SESSION_STORE: {saved_answer}")
+                    quiz_progress["1"] = saved_answer
+                    if is_submitted:
+                        quiz_submitted["1"] = True
+                    
+                    # Update the session
+                    session["quiz_progress"] = quiz_progress
+                    session["quiz_submitted"] = quiz_submitted
+    else:
+        # Get saved answer if it exists
+        saved_answer = quiz_progress.get(str(question_id))
+        # Check if this question has been submitted
+        is_submitted = quiz_submitted.get(str(question_id), False)
     
     # Add correct answer reference
     if question["type"] == "identify":
@@ -412,8 +479,7 @@ async def quiz_question(request: Request, question_id: int):
         question["correct_answer_reference"] = question["correct_answer"]
     
     # Print saved answer for debugging
-    print(f"Saved answer for question {question_id}: {saved_answer}")
-    print(f"Submission state for question {question_id}: {is_submitted}")
+    print(f"Showing question {question_id} - Saved answer: {saved_answer}, Submitted: {is_submitted}")
     
     return templates.TemplateResponse(
         "quiz_question.html",
@@ -423,7 +489,9 @@ async def quiz_question(request: Request, question_id: int):
             "saved_answer": saved_answer,
             "total_questions": len(QUIZ_DATA),
             "current_question": question_id,
-            "quiz_progress": quiz_progress,  # Ensure this is always a dict
+            "quiz_progress": quiz_progress,
+            "quiz_submitted": quiz_submitted,
+            "is_submitted": is_submitted,
             "session": session  # Pass the entire session to the template
         }
     )
@@ -431,59 +499,102 @@ async def quiz_question(request: Request, question_id: int):
 # Save Progress Endpoint
 @app.post("/save_progress")
 async def save_progress(request: Request):
-    data = await request.json()
-    new_answers = data.get("answers") or {}
-    is_submitted = data.get("submitted", False)  # Get submitted flag
+    try:
+        data = await request.json()
+        new_answers = data.get("answers") or {}
+        is_submitted = data.get("submitted", False)  # Get submitted flag
 
-    # Merge into session so progress is { "1": [...], "2": [...], ... }
-    session = request.state.session
-    prog = session.get("quiz_progress", {})
-    submit_state = session.get("quiz_submitted", {})  # Get quiz submission state
-    
-    # ensure keys are strings
-    for qid_str, ans in new_answers.items():
-        if ans is None:
-            # If null/None, remove the answer
-            if str(qid_str) in prog:
-                del prog[str(qid_str)]
-            # Also remove submission state
-            if str(qid_str) in submit_state:
-                del submit_state[str(qid_str)]
-        else:
-            # Otherwise set the answer
-            prog[str(qid_str)] = ans
-            
-            # Update submission state if this is a real submission
-            if is_submitted:
-                submit_state[str(qid_str)] = True
-            
-    session["quiz_progress"] = prog
-    session["quiz_submitted"] = submit_state  # Save submission state to session
-
-    # If there's at least one new answer, return its correctness flag;
-    # otherwise just acknowledge the save.
-    if new_answers:
-        # unpack the single question submission
-        qid_str, user_ans = next(iter(new_answers.items()))
+        # Merge into session so progress is { "1": [...], "2": [...], ... }
+        session = request.state.session
+        prog = session.get("quiz_progress", {})
+        submit_state = session.get("quiz_submitted", {})  # Get quiz submission state
         
-        # If the answer is null, just acknowledge
-        if user_ans is None:
-            return {"status": "success", "reset": True}
+        print(f"Received save request - submitted: {is_submitted}, answers: {new_answers}")
+        print(f"Before update - prog: {prog}, submit_state: {submit_state}")
+        
+        # ensure keys are strings and update values
+        changed_questions = []
+        for qid_str, ans in new_answers.items():
+            qid_str = str(qid_str)  # Ensure string key
+            changed_questions.append(qid_str)
             
-        qid = int(qid_str)
-        question = QUIZ_DATA[qid]
+            # Special logging for question 1
+            if qid_str == "1":
+                print(f"QUESTION 1 SAVE: Answer={ans}, Submitted={is_submitted}")
+            
+            if ans is None:
+                # If null/None, remove the answer
+                if qid_str in prog:
+                    del prog[qid_str]
+                # Also remove submission state
+                if qid_str in submit_state:
+                    del submit_state[qid_str]
+            else:
+                # Otherwise set the answer
+                prog[qid_str] = ans
+                
+                # Update submission state if this is a real submission
+                if is_submitted:
+                    print(f"Marking question {qid_str} as submitted")
+                    submit_state[qid_str] = True
+        
+        # Save the updated states back to the session
+        session["quiz_progress"] = prog
+        session["quiz_submitted"] = submit_state
+        # Make sure the session is saved in the global store
+        SESSION_STORE[request.cookies.get("session_id")] = session
+        
+        # Special verification for question 1
+        if "1" in changed_questions:
+            print(f"After saving Q1 - Quiz progress for Q1: {prog.get('1')}")
+            print(f"After saving Q1 - Submit state for Q1: {submit_state.get('1')}")
+        
+        # Log current session state for debugging
+        print(f"After update - prog: {prog}, submit_state: {submit_state}")
 
-        if question["type"] in ("identify", "analysis"):
-            is_correct = set(user_ans) == set(question["correct_answers"])
-        elif question["type"] == "match":
-            is_correct = user_ans == question["correct_answers"]
-        else:  # scenario
-            is_correct = user_ans == question["correct_answer"]
+        # If there's at least one new answer, return its correctness flag;
+        # otherwise just acknowledge the save.
+        if new_answers:
+            # unpack the single question submission
+            qid_str, user_ans = next(iter(new_answers.items()))
+            
+            # If the answer is null, just acknowledge
+            if user_ans is None:
+                return {"status": "success", "reset": True}
+                
+            qid = int(qid_str)
+            question = QUIZ_DATA[qid]
 
-        return {"status": "success", "isCorrect": is_correct, "submitted": is_submitted}
+            if question["type"] in ("identify", "analysis"):
+                is_correct = set(user_ans) == set(question["correct_answers"])
+            elif question["type"] == "match":
+                is_correct = user_ans == question["correct_answers"]
+            else:  # scenario
+                is_correct = user_ans == question["correct_answer"]
 
-    return {"status": "success"}
+            return {"status": "success", "isCorrect": is_correct, "submitted": is_submitted}
 
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Error in save_progress: {e}")
+        return {"status": "error", "message": str(e)}
+
+# Add a debug endpoint for question 1
+@app.get("/debug-q1")
+async def debug_q1(request: Request):
+    session = request.state.session
+    quiz_progress = session.get("quiz_progress", {})
+    quiz_submitted = session.get("quiz_submitted", {})
+    
+    q1_state = {
+        "answer": quiz_progress.get("1"),
+        "submitted": quiz_submitted.get("1", False),
+        "session_id": request.cookies.get("session_id"),
+        "all_progress": quiz_progress,
+        "all_submissions": quiz_submitted
+    }
+    
+    return q1_state
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)
