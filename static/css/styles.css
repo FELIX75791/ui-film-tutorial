@@ -50,21 +50,26 @@ a:hover {
 
 /* Navigation */
 .topbar {
-    background-color: var(--card-bg);
-    box-shadow: var(--box-shadow);
-    padding: 1rem 0;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+  background-color: var(--card-bg);
+  box-shadow: var(--box-shadow);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+.topbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;  /* ← no more space-between */
 }
 
 .nav {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;       /* spacing between each link/dropdown */
+  margin: 0 auto;    /* auto left/right margins will center this flex item */
 }
 
 .nav a {
@@ -1335,5 +1340,18 @@ label {
   margin-top: 2rem;
   display: flex;
   gap: 1rem;
+}
+
+/* ── SITE TITLE / BRAND ────────────────────────────────── */
+.site-title {
+  font-size: 2rem;             /* larger */
+  font-weight: 900;            /* extra bold */
+  color: var(--text);          /* your darkest text */
+  text-decoration: none;
+  line-height: 1;
+  transition: color 0.3s;
+}
+.site-title:hover {
+  color: var(--primary);
 }
 
