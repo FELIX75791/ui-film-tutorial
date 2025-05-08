@@ -2,59 +2,62 @@
 {% set page = "home" %}
 {% block title %}Home Cinematography Tutorial{% endblock %}
 
+{% block head %}
+  <!-- pull in our new home.css -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
 {% block content %}
-<section class="hero" style="background-image: url('/static/img/hero.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 70vh;">
-  <div class="hero-overlay" style="background: rgba(0,0,0,0.45); padding: 4rem 2rem; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-    <h1 style="color: #fff; text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">Master Essential<br>Cinematography Techniques</h1>
+<section class="hero">
+  <div class="hero-overlay">
+    <h1>Master Essential<br>Cinematography Techniques</h1>
     <div class="cta-row">
       <a class="cta secondary" href="/overview">About this tutorial</a>
-      <a class="cta primary"  href="/category/angle-movement">Begin&nbsp;Learning&nbsp;›</a>
-      <a class="cta secondary" href="#why">Why&nbsp;techniques&nbsp;matter</a>
+      <a class="cta primary"  href="/category/angle-movement">Begin Learning ›</a>
+      <a class="cta secondary" href="#why">Why techniques matter</a>
     </div>
   </div>
 </section>
 
-<section id="why" class="why-section" style="padding: 5rem 2rem; background-color: #f8f9fa;">
-  <div class="container" style="max-width: 960px; margin: 0 auto;">
-    <h2 style="text-align: center; margin-bottom: 3rem; color: #333; font-size: 2.5rem;">Why Cinematography Techniques Matter</h2>
-    
-    <div class="why-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-      <div class="why-card" style="background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        <h3 style="color: #4a5568; margin-bottom: 1rem;">Visual Storytelling</h3>
-        <p style="color: #718096; line-height: 1.6;">Cinematography techniques are the visual language of film. They communicate subtext, emotions, and themes without a single word of dialogue. A well-executed Dutch angle can convey psychological distress more effectively than pages of exposition.</p>
+<section id="why" class="why-section">
+  <div class="container">
+    <h2>Why Cinematography Techniques Matter</h2>
+
+    <div class="why-grid">
+      <div class="why-card">
+        <h3>Visual Storytelling</h3>
+        <p>Cinematography techniques are the visual language of film. They communicate subtext, emotions, and themes without a single word of dialogue. A well-executed Dutch angle can convey psychological distress more effectively than pages of exposition.</p>
       </div>
-      
-      <div class="why-card" style="background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        <h3 style="color: #4a5568; margin-bottom: 1rem;">Emotional Impact</h3>
-        <p style="color: #718096; line-height: 1.6;">Camera movements, lighting choices, and framing directly influence how audiences feel. A low-angle shot creates feelings of power and dominance, while a tracking shot creates immersion, pulling viewers deeply into the narrative experience.</p>
+
+      <div class="why-card">
+        <h3>Emotional Impact</h3>
+        <p>Camera movements, lighting choices, and framing directly influence how audiences feel. A low-angle shot creates feelings of power and dominance, while a tracking shot creates immersion, pulling viewers deeply into the narrative experience.</p>
       </div>
-      
-      <div class="why-card" style="background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        <h3 style="color: #4a5568; margin-bottom: 1rem;">Character Development</h3>
-        <p style="color: #718096; line-height: 1.6;">How characters are framed and lit reveals their inner state and development. A character shot through obstructions suggests entrapment, while gradually shifting from unstable handheld shots to steady movements can mirror a character's psychological journey.</p>
+
+      <div class="why-card">
+        <h3>Character Development</h3>
+        <p>How characters are framed and lit reveals their inner state and development. A character shot through obstructions suggests entrapment, while gradually shifting from unstable handheld shots to steady movements can mirror a character’s psychological journey.</p>
       </div>
-    </div>
-    
-    <div class="why-cards-second-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
-      <div class="why-card" style="background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        <h3 style="color: #4a5568; margin-bottom: 1rem;">Audience Manipulation</h3>
-        <p style="color: #718096; line-height: 1.6;">Directors use cinematography to direct attention, create suspense, and evoke specific reactions. A rack focus can shift attention precisely where needed, while a dolly zoom can create immediate visceral disorientation during moments of revelation.</p>
+
+      <div class="why-card">
+        <h3>Audience Manipulation</h3>
+        <p>Directors use cinematography to direct attention, create suspense, and evoke specific reactions. A rack focus can shift attention precisely where needed, while a dolly zoom can create immediate visceral disorientation during moments of revelation.</p>
       </div>
-      
-      <div class="why-card" style="background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        <h3 style="color: #4a5568; margin-bottom: 1rem;">Artistic Expression</h3>
-        <p style="color: #718096; line-height: 1.6;">Every filmmaker develops a visual signature through their cinematography choices. From Wes Anderson's symmetrical framing to Christopher Nolan's IMAX sequences, these techniques become part of a director's unique voice and storytelling approach.</p>
+
+      <div class="why-card">
+        <h3>Artistic Expression</h3>
+        <p>Every filmmaker develops a visual signature through their cinematography choices. From Wes Anderson’s symmetrical framing to Christopher Nolan’s IMAX sequences, these techniques become part of a director’s unique voice and storytelling approach.</p>
       </div>
-      
-      <div class="why-card" style="background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        <h3 style="color: #4a5568; margin-bottom: 1rem;">Cultural Impact</h3>
-        <p style="color: #718096; line-height: 1.6;">Innovative cinematography techniques become cultural touchstones. The bullet-time effect from "The Matrix," the Steadicam sequence in "Goodfellas," or the rotating hallway in "Inception" transcend their films to influence not just cinema but advertising, music videos, and visual culture.</p>
+
+      <div class="why-card">
+        <h3>Cultural Impact</h3>
+        <p>Innovative cinematography techniques become cultural touchstones. The bullet-time effect from “The Matrix,” the Steadicam sequence in “Goodfellas,” or the rotating hallway in “Inception” transcend their films to influence not just cinema but advertising, music videos, and visual culture.</p>
       </div>
     </div>
-    
-    <div class="why-conclusion" style="margin-top: 4rem; text-align: center; max-width: 700px; margin-left: auto; margin-right: auto;">
-      <p style="color: #4a5568; font-size: 1.2rem; line-height: 1.8;">Understanding these techniques empowers you as both a filmmaker and viewer. You'll create more intentional, impactful visual stories and develop a deeper appreciation for the craft behind your favorite films.</p>
-      <a href="/category/angle-movement" class="start-learning-btn" style="display: inline-block; background-color: #4f46e5; color: white; padding: 0.75rem 2rem; border-radius: 8px; text-decoration: none; margin-top: 2rem; font-weight: 500; transition: all 0.2s ease;">Start Learning Now</a>
+
+    <div class="why-conclusion">
+      <p>Understanding these techniques empowers you as both a filmmaker and viewer. You’ll create more intentional, impactful visual stories and develop a deeper appreciation for the craft behind your favorite films.</p>
+      <a href="/category/angle-movement" class="start-learning-btn">Start Learning Now</a>
     </div>
   </div>
 </section>

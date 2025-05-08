@@ -1,33 +1,55 @@
-/* grid container */
-.et-grid{
-  display:grid;
-  gap:1.25rem;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  margin-top:2rem;
+/* editing_overview.css */
+
+/* ── 1) Grid container ───────────────────────────────────────── */
+.et-grid {
+  display: grid;
+  width: 100%;
+  max-width: 700px;               /* container never wider than this */
+  margin: 3rem auto 0;            /* center + push down from above content */
+  padding: 0 1rem;                /* small side padding on mobile */
+  gap: 2rem;                      /* space between cards */
+
+  /* exactly two columns (min 320px each, then flex) */
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
 }
 
-/* individual card */
-.et-card{
-  position:relative;
-  display:block;
-  border-radius:.35rem;
-  overflow:hidden;
-  text-decoration:none;
-  box-shadow:0 4px 10px rgba(0,0,0,.35);
-  transition:transform .25s ease;
-}
-.et-card:hover{ transform:translateY(-4px); }
-
-/* image */
-.et-card img{
-  width:100%; height:340px; object-fit:cover; display:block;
+/* collapse to one column on narrower viewports */
+@media (max-width: 680px) {
+  .et-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* label bar */
-.et-label{
-  position:absolute; inset:auto 0 0 0;
-  background:rgba(0,0,0,.65);
-  color:#fff; text-align:center;
-  font-weight:600; letter-spacing:.3px;
-  padding:.65rem 0;
+/* ── 2) Individual card ──────────────────────────────────────── */
+.et-card {
+  position: relative;
+  display: block;
+  border-radius: .35rem;
+  overflow: hidden;
+  text-decoration: none;
+  box-shadow: 0 6px 14px rgba(0,0,0,.30);
+  transition: transform .25s ease;
+}
+.et-card:hover {
+  transform: translateY(-6px);
+}
+
+/* ── 3) Image ───────────────────────────────────────────────── */
+.et-card img {
+  width: 100%;
+  height: 380px;                  /* taller than before */
+  object-fit: cover;
+  display: block;
+}
+
+/* ── 4) Label bar ───────────────────────────────────────────── */
+.et-label {
+  position: absolute;
+  inset: auto 0 0 0;
+  background: rgba(0,0,0,.65);
+  color: #fff;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: .3px;
+  padding: .65rem 0;
 }

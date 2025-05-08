@@ -1331,3 +1331,9 @@ label {
     opacity: 0.9;
 }
 
+.pager {
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
