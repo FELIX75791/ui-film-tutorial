@@ -511,6 +511,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+<!-- Add enhanced drag and drop functionality for Question3 and Question4 -->
+<script src="{{ url_for('static', filename='js/question-drag.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -702,6 +705,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // For matching questions - save after drag and drop
     if (typeof $ !== 'undefined') {
+        // The detailed initialization is now in question-drag.js
+        // This is just a fallback to ensure the drop event still triggers save
         $('.emotion-box').on('drop', function(event, ui) {
             // Allow a brief delay for the DOM to update after drop
             setTimeout(saveCurrentSelections, 100);
