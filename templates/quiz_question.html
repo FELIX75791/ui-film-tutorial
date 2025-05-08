@@ -517,6 +517,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextBtn = document.getElementById('next-btn');
     
     if (feedbackDiv && submitBtn && nextBtn) {
+      // Clear any existing feedback content first
+      feedbackDiv.innerHTML = '';
+      
       // Display feedback
       feedbackDiv.style.display = 'block';
       feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
@@ -527,25 +530,39 @@ document.addEventListener('DOMContentLoaded', function() {
             'Not quite right. ' + questionData.explanation}</p>
       `;
       
-      // Add help text
-      const currentQ = {{ current_question }};
-      const answer = quizAnswers[currentQ];
-      if (answer) {
-        const helpText = document.createElement('div');
-        helpText.className = 'help-text';
+      // Add a single help text element with the correct answers
+      const helpText = document.createElement('div');
+      helpText.className = 'help-text';
+      // Get the correct answer data directly from question
+      if (questionData.type === 'scenario') {
+        // For scenario questions, use correct_answer
         helpText.innerHTML = `
           <strong>Correct Answer:</strong><br>
-          ${Array.isArray(answer.correct) ? 
-              answer.correct.join(', ') : 
-              (typeof answer.correct === 'object' ? 
-                  Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
-                  answer.correct)
-          }<br><br>
+          ${questionData.correct_answer}<br><br>
           <strong>Explanation:</strong><br>
-          ${answer.explanation}
+          ${questionData.explanation}
         `;
-        feedbackDiv.appendChild(helpText);
+      } else if (questionData.type === 'match') {
+        // For match questions, format the object
+        const formattedMatches = Object.entries(questionData.correct_answers)
+          .map(([k, v]) => `${k} → ${v}`)
+          .join('<br>');
+        helpText.innerHTML = `
+          <strong>Correct Answer:</strong><br>
+          ${formattedMatches}<br><br>
+          <strong>Explanation:</strong><br>
+          ${questionData.explanation}
+        `;
+      } else {
+        // For identify or analysis, use correct_answers array
+        helpText.innerHTML = `
+          <strong>Correct Answer:</strong><br>
+          ${questionData.correct_answers.join(', ')}<br><br>
+          <strong>Explanation:</strong><br>
+          ${questionData.explanation}
+        `;
       }
+      feedbackDiv.appendChild(helpText);
       
       // Update button states
       submitBtn.disabled = true;
@@ -923,6 +940,9 @@ document.addEventListener('DOMContentLoaded', function() {
             .then((data) => {
                 console.log("Save response:", data);
                 
+                // Clear any existing feedback content first
+                feedbackDiv.innerHTML = '';
+                
                 // Show feedback
                 feedbackDiv.style.display = 'block';
                 feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
@@ -941,27 +961,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Disable submit button
                 submitBtn.disabled = true;
                 
-                // Add help text after submitting
-                setTimeout(() => {
-                    const currentQ = {{ current_question }};
-                    const answer = quizAnswers[currentQ];
-                    if (answer) {
-                        const helpText = document.createElement('div');
-                        helpText.className = 'help-text';
-                        helpText.innerHTML = `
-                            <strong>Correct Answer:</strong><br>
-                            ${Array.isArray(answer.correct) ? 
-                                answer.correct.join(', ') : 
-                                (typeof answer.correct === 'object' ? 
-                                    Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
-                                    answer.correct)
-                            }<br><br>
-                            <strong>Explanation:</strong><br>
-                            ${answer.explanation}
-                        `;
-                        document.querySelector('.quiz-feedback')?.appendChild(helpText);
-                    }
-                }, 500);
+                // Now add the help text - only add it once
+                const helpText = document.createElement('div');
+                helpText.className = 'help-text';
+                helpText.innerHTML = `
+                    <strong>Correct Answer:</strong><br>
+                    ${Array.isArray(questionData.correct_answers || questionData.correct_answer) ? 
+                        (questionData.correct_answers || [questionData.correct_answer]).join(', ') : 
+                        (typeof questionData.correct_answers === 'object' ? 
+                            Object.entries(questionData.correct_answers).map(([k,v]) => `${k} → ${v}`).join('<br>') :
+                            questionData.correct_answer)
+                    }<br><br>
+                    <strong>Explanation:</strong><br>
+                    ${questionData.explanation}
+                `;
+                feedbackDiv.appendChild(helpText);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -1169,157 +1183,8 @@ const quizAnswers = {
     }
 };
 
-// Add help text after submitting
-document.getElementById('submit-btn')?.addEventListener('click', function() {
-    setTimeout(() => {
-        const currentQ = {{ current_question }};
-        const answer = quizAnswers[currentQ];
-        if (answer) {
-            const helpText = document.createElement('div');
-            helpText.className = 'help-text';
-            helpText.innerHTML = `
-                <strong>Correct Answer:</strong><br>
-                ${Array.isArray(answer.correct) ? 
-                    answer.correct.join(', ') : 
-                    (typeof answer.correct === 'object' ? 
-                        Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
-                        answer.correct)
-                }<br><br>
-                <strong>Explanation:</strong><br>
-                ${answer.explanation}
-            `;
-            document.querySelector('.quiz-feedback')?.appendChild(helpText);
-        }
-    }, 500);
-});
-</script>
-
-<!-- Update the submit button handling -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const submitBtn = document.getElementById('submit-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const feedbackDiv = document.getElementById('feedback');
-    const currentQuestion = {{ current_question }};
-    
-    if (submitBtn) {
-        submitBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Get selected answers based on question type
-            let answers;
-            const questionType = document.querySelector('.quiz-content').getAttribute('data-question-type');
-            
-            if (questionType === 'scenario') {
-                const selectedRadio = document.querySelector('input[type="radio"]:checked');
-                answers = selectedRadio ? selectedRadio.value : null;
-            } else if (questionType === 'identify' || questionType === 'analysis') {
-                answers = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-                    .map(input => input.value);
-            } else if (questionType === 'match') {
-                answers = {};
-                document.querySelectorAll('.emotion-box').forEach(box => {
-                    const technique = box.querySelector('.technique-item')?.dataset.technique;
-                    if (technique) {
-                        answers[technique] = box.dataset.emotion;
-                    }
-                });
-            }
-            
-            // Special handling for question 1
-            if (currentQuestion === 1) {
-                console.log("Submitting Question 1:", answers);
-            }
-            
-            // Get correct answers from the question data
-            const questionData = {{ question|tojson|safe }};
-            let isCorrect = false;
-            
-            if (questionType === 'scenario') {
-                isCorrect = answers === questionData.correct_answer;
-            } else if (questionType === 'match') {
-                // Compare dictionaries by their contents
-                const userKeys = Object.keys(answers);
-                const correctKeys = Object.keys(questionData.correct_answers);
-                isCorrect = (
-                    userKeys.length === correctKeys.length &&
-                    userKeys.every(key => 
-                        answers[key] === questionData.correct_answers[key]
-                    )
-                );
-            } else if (questionType === 'identify' || questionType === 'analysis') {
-                isCorrect = arraysEqual(answers.sort(), questionData.correct_answers.sort());
-            }
-            
-            // Make the submission request
-            const submitData = {
-                answers: {
-                    [currentQuestion]: answers
-                },
-                submitted: true  // Always set submitted flag to true
-            };
-            
-            console.log("Sending submission data:", submitData);
-            
-            // Save progress and show feedback
-            fetch('/save_progress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submitData)
-            })
-            .then(response => response.json())
-            .then((data) => {
-                console.log("Save response:", data);
-                
-                // Show feedback
-                feedbackDiv.style.display = 'block';
-                feedbackDiv.className = `quiz-feedback ${isCorrect ? 'success' : 'error'}`;
-                feedbackDiv.innerHTML = `
-                    <h3>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</h3>
-                    <p>${isCorrect ? 
-                        'Great job! You can proceed to the next question.' : 
-                        'Not quite right. ' + questionData.explanation}</p>
-                `;
-                
-                // Show next button
-                if (nextBtn) {
-                    nextBtn.style.display = 'inline-block';
-                }
-                
-                // Disable submit button
-                submitBtn.disabled = true;
-                
-                // Add help text after submitting
-                setTimeout(() => {
-                    const currentQ = {{ current_question }};
-                    const answer = quizAnswers[currentQ];
-                    if (answer) {
-                        const helpText = document.createElement('div');
-                        helpText.className = 'help-text';
-                        helpText.innerHTML = `
-                            <strong>Correct Answer:</strong><br>
-                            ${Array.isArray(answer.correct) ? 
-                                answer.correct.join(', ') : 
-                                (typeof answer.correct === 'object' ? 
-                                    Object.entries(answer.correct).map(([k,v]) => `${k} → ${v}`).join('<br>') :
-                                    answer.correct)
-                            }<br><br>
-                            <strong>Explanation:</strong><br>
-                            ${answer.explanation}
-                        `;
-                        document.querySelector('.quiz-feedback')?.appendChild(helpText);
-                    }
-                }, 500);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to save your answer. Please try again.');
-            });
-        });
-    }
-});
+// We don't need the click handler here, as we're using the direct question data
+// from the server instead of the quizAnswers object
 </script>
 
 <!-- Check if this question was already answered and show feedback -->
